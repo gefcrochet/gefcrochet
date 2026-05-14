@@ -2,33 +2,23 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useState } from "react"
 import { useCart } from "./CartContext"
 
 export function Header() {
   const { count } = useCart()
-  const [menuOpen, setMenuOpen] = useState(false)
 
   return (
     <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur border-b border-outline-variant">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-[100px] grid grid-cols-3 items-center">
-        {/* Left: nav links */}
+        {/* Left: nav links (desktop only) */}
         <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-on-surface-variant">
           <Link href="/" className="hover:text-primary transition-colors">Home</Link>
           <Link href="/shop" className="hover:text-primary transition-colors">Catalogo</Link>
           <Link href="/contatti" className="hover:text-primary transition-colors">Contatti</Link>
         </nav>
 
-        {/* Mobile: hamburger (left on mobile) */}
-        <div className="flex md:hidden items-center">
-          <button
-            className="p-2 text-on-surface-variant"
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-label="Menu"
-          >
-            <span className="material-symbols-outlined text-[22px]">{menuOpen ? "close" : "menu"}</span>
-          </button>
-        </div>
+        {/* Mobile: empty left cell (nav is in bottom bar) */}
+        <div className="md:hidden" />
 
         {/* Center: logo */}
         <div className="flex justify-center">
@@ -49,14 +39,6 @@ export function Header() {
           </Link>
         </div>
       </div>
-
-      {menuOpen && (
-        <nav className="md:hidden border-t border-outline-variant bg-surface px-4 py-3 flex flex-col gap-3 text-sm font-medium text-on-surface-variant">
-          <Link href="/" onClick={() => setMenuOpen(false)} className="hover:text-primary">Home</Link>
-          <Link href="/shop" onClick={() => setMenuOpen(false)} className="hover:text-primary">Catalogo</Link>
-          <Link href="/contatti" onClick={() => setMenuOpen(false)} className="hover:text-primary">Contatti</Link>
-        </nav>
-      )}
     </header>
   )
 }
