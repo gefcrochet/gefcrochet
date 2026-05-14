@@ -1,44 +1,18 @@
-"use client"
+import { prisma } from "@/lib/prisma"
+import { HeaderNav } from "./HeaderNav"
 
-import Link from "next/link"
-import Image from "next/image"
-import { useCart } from "./CartContext"
-
-export function Header() {
-  const { count } = useCart()
+export async function Header() {
+  const settings = await prisma.siteSettings.findUnique({ where: { id: "default" } }).catch(() => null)
+  const showBanner = settings?.announcementActive && settings.announcementText
 
   return (
-    <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur border-b border-outline-variant">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-[100px] grid grid-cols-3 items-center">
-        {/* Left: nav links (desktop only) */}
-        <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-on-surface-variant">
-          <Link href="/" className="hover:text-primary transition-colors">Home</Link>
-          <Link href="/shop" className="hover:text-primary transition-colors">Catalogo</Link>
-          <Link href="/contatti" className="hover:text-primary transition-colors">Contatti</Link>
-        </nav>
-
-        {/* Mobile: empty left cell (nav is in bottom bar) */}
-        <div className="md:hidden" />
-
-        {/* Center: logo */}
-        <div className="flex justify-center">
-          <Link href="/" className="flex items-center">
-            <Image src="/logo.png" alt="GeF Crochet" height={89.5} width={160} className="w-[160px] h-[89.5px]" priority />
-          </Link>
+    <>
+      {showBanner && (
+        <div className="bg-primary text-on-primary text-center py-2 px-4 text-xs font-semibold tracking-wider">
+          {settings.announcementText}
         </div>
-
-        {/* Right: cart icon */}
-        <div className="flex items-center justify-end gap-2">
-          <Link href="/cart" className="relative p-2 text-on-surface-variant hover:text-primary transition-colors">
-            <span className="material-symbols-outlined text-[22px]">shopping_bag</span>
-            {count > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 bg-primary text-on-primary text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                {count > 9 ? "9+" : count}
-              </span>
-            )}
-          </Link>
-        </div>
-      </div>
-    </header>
+      )}
+      <HeaderNav />
+    </>
   )
 }

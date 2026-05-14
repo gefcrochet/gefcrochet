@@ -33,11 +33,6 @@ export default async function HomePage() {
         {/* Hero Slideshow */}
         <HeroSlideshow slides={slides} />
 
-        {/* Announcement strip */}
-        <div className="bg-primary text-on-primary text-center py-2 px-4 text-xs font-semibold tracking-wider">
-          Spedizione gratuita per ordini superiori a €60 &nbsp;·&nbsp; Fatto a mano in Italia &nbsp;·&nbsp; 100% Fibre naturali
-        </div>
-
         {/* Categories bento */}
         {collections.length > 0 && (
           <section className="py-20 px-4 sm:px-6 max-w-7xl mx-auto">
@@ -198,10 +193,10 @@ export default async function HomePage() {
             <div className="relative z-10">
               <span className="text-on-primary/70 text-xs font-semibold tracking-widest uppercase mb-4 block">Resta in contatto</span>
               <h2 className="font-newsreader text-3xl md:text-4xl font-normal text-on-primary mb-4">
-                Unisciti al Circolo GeF Crochet
+                Unisciti a GeF Crochet
               </h2>
               <p className="text-on-primary/80 mb-8 max-w-md mx-auto">
-                Accesso anticipato a nuove collezioni, cartamodelli gratuiti e ispirazione delicata direttamente nella tua casella.
+                Accesso anticipato a nuove collezioni e ispirazione delicata direttamente nella tua casella di posta.
               </p>
               <NewsletterForm />
             </div>

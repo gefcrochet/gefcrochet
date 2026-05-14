@@ -150,6 +150,12 @@ model NewsletterSubscriber {
   unsubscribeToken String   @unique @default(cuid())
 }
 
+model SiteSettings {
+  id                 String   @id @default("default")
+  announcementText   String?
+  announcementActive Boolean  @default(false)
+}
+
 model LoginAttempt {
   id        String   @id @default(cuid())
   ip        String

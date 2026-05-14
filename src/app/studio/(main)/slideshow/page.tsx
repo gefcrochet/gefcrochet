@@ -28,6 +28,12 @@ export default function SlideshowPage() {
   const [saving, setSaving] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
 
+  // Announcement bar state
+  const [bannerText, setBannerText] = useState("")
+  const [bannerActive, setBannerActive] = useState(false)
+  const [bannerSaving, setBannerSaving] = useState(false)
+  const [bannerSaved, setBannerSaved] = useState(false)
+
   // Media picker state
   const [imageTab, setImageTab] = useState<"url" | "media">("url")
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([])
@@ -38,7 +44,25 @@ export default function SlideshowPage() {
     fetch("/api/slides")
       .then((r) => r.json())
       .then((d) => { setSlides(d); setLoading(false) })
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((d) => {
+        setBannerText(d.announcementText ?? "")
+        setBannerActive(d.announcementActive ?? false)
+      })
   }, [])
+
+  async function saveBanner() {
+    setBannerSaving(true)
+    await fetch("/api/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ announcementText: bannerText, announcementActive: bannerActive }),
+    })
+    setBannerSaving(false)
+    setBannerSaved(true)
+    setTimeout(() => setBannerSaved(false), 2500)
+  }
 
   async function loadMedia() {
     if (mediaFiles.length > 0) return // already loaded
@@ -131,8 +155,52 @@ export default function SlideshowPage() {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-6 max-w-4xl mx-auto space-y-8">
+
+      {/* Announcement bar settings */}
+      <section className="bg-surface-container-low border border-outline-variant rounded-2xl p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-[20px]">campaign</span>
+          <h2 className="font-semibold text-on-surface">Striscia Annunci</h2>
+          <span className="text-xs text-on-surface-variant ml-auto">appare sopra il menù su tutto il sito</span>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-on-surface-variant mb-1">Testo del banner</label>
+          <input
+            value={bannerText}
+            onChange={(e) => setBannerText(e.target.value)}
+            placeholder="Es. Spedizione gratuita sopra €60 · Fatto a mano in Italia"
+            className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={bannerActive}
+              onClick={() => setBannerActive((v) => !v)}
+              className={`relative w-10 h-5 rounded-full transition-colors ${bannerActive ? "bg-primary" : "bg-outline-variant"}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${bannerActive ? "translate-x-5" : "translate-x-0"}`} />
+            </button>
+            <span className="text-sm text-on-surface">{bannerActive ? "Visibile" : "Nascosta"}</span>
+          </label>
+          <div className="flex items-center gap-3">
+            {bannerSaved && <span className="text-xs text-green-600 font-medium">Salvato ✓</span>}
+            <button
+              onClick={saveBanner}
+              disabled={bannerSaving}
+              className="bg-primary text-on-primary px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60"
+            >
+              {bannerSaving ? "Salvataggio…" : "Salva"}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Slides section */}
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="font-newsreader text-2xl font-semibold text-on-surface">Slideshow Home</h1>
           <p className="text-sm text-on-surface-variant">{slides.length} slide · appaiono nell&apos;hero della homepage</p>
@@ -371,6 +439,7 @@ export default function SlideshowPage() {
           ))}
         </div>
       )}
+
     </div>
   )
 }
