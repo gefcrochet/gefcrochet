@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 
 interface MediaFile {
   url: string
+  publicId: string
   name: string
   folder: string
   size: number
@@ -77,15 +78,15 @@ export default function MediaPage() {
     e.target.value = ""
   }
 
-  async function deleteFile(url: string) {
+  async function deleteFile(publicId: string) {
     const res = await fetch("/api/media", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
+      body: JSON.stringify({ publicId }),
     })
     if (res.ok) {
-      setFiles((prev) => prev.filter((f) => f.url !== url))
-      if (selected === url) setSelected(null)
+      setFiles((prev) => prev.filter((f) => f.publicId !== publicId))
+      if (selected === publicId) setSelected(null)
     }
     setDeleteConfirm(null)
   }
@@ -206,7 +207,7 @@ export default function MediaPage() {
                     return (
                       <div
                         key={file.url}
-                        onClick={() => setSelected(isSelected ? null : file.url)}
+                        onClick={() => setSelected(isSelected ? null : file.publicId)}
                         className={`group relative aspect-square rounded-xl overflow-hidden bg-surface-container border-2 cursor-pointer transition-all hover:scale-[1.02] ${
                           isSelected ? "border-primary shadow-md shadow-primary/20" : "border-transparent hover:border-outline-variant"
                         }`}
@@ -232,7 +233,7 @@ export default function MediaPage() {
                               <span className="material-symbols-outlined text-[14px]">content_copy</span>
                             </button>
                             <button
-                              onClick={(e) => { e.stopPropagation(); setDeleteConfirm(file.url) }}
+                              onClick={(e) => { e.stopPropagation(); setDeleteConfirm(file.publicId) }}
                               className="p-1.5 rounded-lg bg-surface-container text-error hover:bg-error hover:text-on-error transition-colors"
                               title="Elimina"
                             >
@@ -243,7 +244,7 @@ export default function MediaPage() {
 
                         {/* Selected indicator */}
                         {isSelected && (
-                          <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                          <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center pointer-events-none">
                             <span className="material-symbols-outlined text-on-primary text-[12px]">check</span>
                           </div>
                         )}
@@ -259,7 +260,7 @@ export default function MediaPage() {
 
       {/* Selected file info bar */}
       {selected && (() => {
-        const f = files.find((x) => x.url === selected)
+        const f = files.find((x) => x.publicId === selected)
         if (!f) return null
         return (
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 bg-surface border border-outline-variant shadow-xl rounded-2xl px-5 py-3 text-sm">

@@ -1,9 +1,9 @@
 import { NextRequest } from "next/server"
 import { getSessionFromRequest } from "@/lib/session"
-import { writeFile, mkdir } from "fs/promises"
-import path from "path"
+import { cloudinary } from "@/lib/cloudinary"
 
-const MEDIA_DIR = path.join(process.cwd(), "public", "media")
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"]
+const MAX_SIZE = 10 * 1024 * 1024
 
 export async function POST(req: NextRequest) {
   const session = await getSessionFromRequest(req)
@@ -11,44 +11,28 @@ export async function POST(req: NextRequest) {
 
   const formData = await req.formData()
   const file = formData.get("file") as File | null
-  const folder = (formData.get("folder") as string | null)?.trim() || ""
+  const folder = ((formData.get("folder") as string | null) ?? "").trim()
 
   if (!file) return Response.json({ error: "File mancante" }, { status: 400 })
+  if (file.size > MAX_SIZE) return Response.json({ error: "File troppo grande (max 10MB)" }, { status: 400 })
+  if (!ALLOWED_TYPES.includes(file.type)) return Response.json({ error: "Formato non supportato" }, { status: 400 })
 
   const bytes = await file.arrayBuffer()
   const buffer = Buffer.from(bytes)
 
-  if (file.size > 10 * 1024 * 1024) {
-    return Response.json({ error: "File troppo grande (max 10MB)" }, { status: 400 })
-  }
+  const cloudinaryFolder = folder
+    ? `gefcrochet/${folder.replace(/[^a-z0-9_\-]/gi, "-")}`
+    : "gefcrochet"
 
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg"
-  const allowed = ["jpg", "jpeg", "png", "webp", "gif"]
-  if (!allowed.includes(ext)) {
-    return Response.json({ error: "Formato non supportato" }, { status: 400 })
-  }
+  const result = await new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
+    cloudinary.uploader.upload_stream(
+      { folder: cloudinaryFolder, resource_type: "image" },
+      (error, result) => {
+        if (error || !result) reject(error ?? new Error("Upload fallito"))
+        else resolve(result as { secure_url: string; public_id: string })
+      }
+    ).end(buffer)
+  })
 
-  // Sanitize folder name (prevent path traversal)
-  const safeFolder = folder
-    .replace(/\.\./g, "")
-    .replace(/[^a-z0-9_\-\/]/gi, "-")
-    .replace(/^\/+|\/+$/g, "")
-
-  const uploadDir = safeFolder
-    ? path.join(MEDIA_DIR, safeFolder)
-    : MEDIA_DIR
-
-  // Verify the resolved path is inside MEDIA_DIR
-  const resolved = path.resolve(uploadDir)
-  if (!resolved.startsWith(MEDIA_DIR)) {
-    return Response.json({ error: "Path non valido" }, { status: 400 })
-  }
-
-  await mkdir(uploadDir, { recursive: true })
-
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-  await writeFile(path.join(uploadDir, filename), buffer)
-
-  const url = safeFolder ? `/media/${safeFolder}/${filename}` : `/media/${filename}`
-  return Response.json({ url })
+  return Response.json({ url: result.secure_url, publicId: result.public_id })
 }
