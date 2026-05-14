@@ -15,27 +15,37 @@ export async function GET(req: NextRequest) {
   const session = await getSessionFromRequest(req)
   if (!session) return Response.json({ error: "Non autorizzato" }, { status: 401 })
 
-  const result = await cloudinary.api.resources({
-    type: "upload",
-    prefix: "gefcrochet",
-    max_results: 200,
-    resource_type: "image",
-  }) as { resources: CloudinaryResource[] }
+  if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+    console.error("Cloudinary env vars missing")
+    return Response.json({ error: "Cloudinary non configurato" }, { status: 500 })
+  }
 
-  const files = result.resources.map((r) => {
-    const folder = r.folder.replace(/^gefcrochet\/?/, "") || "/"
-    const nameParts = r.public_id.split("/")
-    const name = nameParts[nameParts.length - 1]
-    return {
-      url: r.secure_url,
-      publicId: r.public_id,
-      name,
-      folder,
-      size: r.bytes,
-    }
-  })
+  try {
+    const result = await cloudinary.api.resources({
+      type: "upload",
+      prefix: "gefcrochet",
+      max_results: 200,
+      resource_type: "image",
+    }) as { resources: CloudinaryResource[] }
 
-  return Response.json(files)
+    const files = result.resources.map((r) => {
+      const folder = r.folder.replace(/^gefcrochet\/?/, "") || "/"
+      const nameParts = r.public_id.split("/")
+      const name = nameParts[nameParts.length - 1]
+      return {
+        url: r.secure_url,
+        publicId: r.public_id,
+        name,
+        folder,
+        size: r.bytes,
+      }
+    })
+
+    return Response.json(files)
+  } catch (err) {
+    console.error("Cloudinary GET error:", err)
+    return Response.json({ error: "Errore Cloudinary", detail: String(err) }, { status: 500 })
+  }
 }
 
 export async function DELETE(req: NextRequest) {
