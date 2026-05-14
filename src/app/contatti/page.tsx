@@ -38,8 +38,8 @@ export default function ContattiPage() {
                   <span className="material-symbols-outlined text-primary text-xl mt-0.5">mail</span>
                   <div>
                     <p className="font-medium text-on-surface">Email</p>
-                    <a href="mailto:ciao@gefcrochet.it" className="hover:text-primary transition-colors">
-                      ciao@gefcrochet.it
+                    <a href="mailto:info@gefcrochet.it" className="hover:text-primary transition-colors">
+                      info@gefcrochet.it
                     </a>
                   </div>
                 </div>

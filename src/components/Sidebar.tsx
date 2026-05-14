@@ -26,7 +26,6 @@ export function Sidebar() {
         <Link href="/" className="w-full block">
           <Image src="/logo.png" alt="GeF Crochet" height={48} width={192} className="w-full h-auto" />
         </Link>
-        <p className="text-xs text-on-surface-variant self-start">Studio</p>
       </div>
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {navItems.map(({ href, label, icon }) => {

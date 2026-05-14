@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import "./globals.css"
 import { CartProvider } from "@/components/CartContext"
 import { MobileBottomNav } from "@/components/MobileBottomNav"
+import { CookieConsentProvider } from "@/components/CookieConsent"
 
 export const metadata: Metadata = {
   title: "GeF Crochet — Handcrafted Crochet",
@@ -20,10 +21,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-full flex flex-col antialiased">
         <CartProvider>
-          <div className="flex flex-col flex-1 pb-16 md:pb-0">
-            {children}
-          </div>
-          <MobileBottomNav />
+          <CookieConsentProvider>
+            <div className="flex flex-col flex-1 pb-16 md:pb-0">
+              {children}
+            </div>
+            <MobileBottomNav />
+          </CookieConsentProvider>
         </CartProvider>
       </body>
     </html>

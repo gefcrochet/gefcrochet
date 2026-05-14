@@ -3,7 +3,7 @@
 export function ContactForm() {
   return (
     <form
-      action="mailto:gef@floraandfiber.it"
+      action="mailto:info@gefcrochet.it"
       method="post"
       encType="text/plain"
       className="space-y-4"
@@ -46,8 +46,8 @@ export function ContactForm() {
       </button>
       <p className="text-xs text-on-surface-variant text-center">
         Oppure scrivici direttamente a{" "}
-        <a href="mailto:gef@floraandfiber.it" className="text-primary hover:underline">
-          gef@floraandfiber.it
+        <a href="mailto:info@gefcrochet.it" className="text-primary hover:underline">
+          info@gefcrochet.it
         </a>
       </p>
     </form>
