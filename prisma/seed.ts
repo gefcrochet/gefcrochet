@@ -1,12 +1,10 @@
 import { PrismaClient } from "../src/generated/prisma/client"
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3"
+import { PrismaLibSql } from "@prisma/adapter-libsql"
 import bcrypt from "bcryptjs"
-import path from "path"
 
-const dbUrl = process.env.DATABASE_URL ?? "file:./dev.db"
-const filePath = dbUrl.replace(/^file:/, "")
-const resolvedPath = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath)
-const adapter = new PrismaBetterSqlite3({ url: resolvedPath })
+const url = process.env.DATABASE_URL ?? "file:dev.db"
+const authToken = process.env.TURSO_AUTH_TOKEN || undefined
+const adapter = new PrismaLibSql({ url, authToken })
 const prisma = new PrismaClient({ adapter })
 
 async function main() {
