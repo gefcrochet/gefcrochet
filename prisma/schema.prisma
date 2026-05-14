@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name             String?
+  resetToken       String?   @unique
+  resetTokenExpiry DateTime?
+  createdAt        DateTime  @default(now())
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  slug     String    @unique
+  products Product[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String
+  price       Int
+  salePrice   Int?
+  sku         String?  @unique
+  stock       Int      @default(0)
+  isActive    Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  colors     String   @default("[]")
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  images      ProductImage[]
+  tags        Tag[]              @relation("ProductTags")
+  orderItems  OrderItem[]
+  collections CollectionProduct[]
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  url       String
+  alt       String?
+  position  Int     @default(0)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Tag {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  products Product[] @relation("ProductTags")
+}
+
+model Collection {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  description  String?
+  heroImageUrl String?
+  heroTitle    String?
+  heroSubtitle String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  products CollectionProduct[]
+}
+
+model Slide {
+  id        String   @id @default(cuid())
+  imageUrl  String
+  caption   String?
+  linkUrl   String?
+  linkText  String?
+  position  Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model CollectionProduct {
+  collectionId String
+  productId    String
+  position     Int        @default(0)
+  collection   Collection @relation(fields: [collectionId], references: [id])
+  product      Product    @relation(fields: [productId], references: [id])
+
+  @@id([collectionId, productId])
+}
+
+model Order {
+  id              String   @id @default(cuid())
+  orderNumber     Int      @unique
+  status          String   @default("PROCESSING")
+
+  customerName    String
+  customerEmail   String
+  customerPhone   String?
+
+  shippingLine1   String
+  shippingCity    String
+  shippingPostal  String
+  shippingCountry String   @default("IT")
+
+  subtotalCents   Int
+  shippingCents   Int      @default(0)
+  totalCents      Int
+
+  stripeSessionId String?  @unique
+  stripePaymentId String?  @unique
+
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items OrderItem[]
+}
+
+model OrderItem {
+  id          String  @id @default(cuid())
+  quantity    Int
+  unitPrice   Int
+  productName String
+
+  orderId   String
+  productId String?
+  order     Order    @relation(fields: [orderId], references: [id])
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+}
+
+model NewsletterSubscriber {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  isActive         Boolean  @default(true)
+  subscribedAt     DateTime @default(now())
+  unsubscribeToken String   @unique @default(cuid())
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  ip        String
+  createdAt DateTime @default(now())
+
+  @@index([ip, createdAt])
+}

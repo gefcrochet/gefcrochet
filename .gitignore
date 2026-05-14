@@ -20,6 +20,11 @@
 # production
 /build
 
+# database files — never commit
+*.db
+*.db-shm
+*.db-wal
+
 # misc
 .DS_Store
 *.pem
@@ -39,3 +44,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
