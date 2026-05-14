@@ -1,6 +1,8 @@
+import { unstable_noStore as noStore } from "next/cache"
 import { prisma } from "@/lib/prisma"
 
 export async function AnnouncementBar() {
+  noStore()
   const settings = await prisma.siteSettings.findUnique({ where: { id: "default" } }).catch(() => null)
   if (!settings?.announcementActive || !settings.announcementText) return null
   return (
