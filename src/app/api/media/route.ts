@@ -29,7 +29,8 @@ export async function GET(req: NextRequest) {
     }) as { resources: CloudinaryResource[] }
 
     const files = result.resources.map((r) => {
-      const folder = r.folder.replace(/^gefcrochet\/?/, "") || "/"
+      const rawFolder = r.folder ?? r.public_id.split("/").slice(0, -1).join("/") ?? ""
+      const folder = rawFolder.replace(/^gefcrochet\/?/, "") || "/"
       const nameParts = r.public_id.split("/")
       const name = nameParts[nameParts.length - 1]
       return {
