@@ -3,7 +3,6 @@ import "./globals.css"
 import { CartProvider } from "@/components/CartContext"
 import { MobileBottomNav } from "@/components/MobileBottomNav"
 import { CookieConsentProvider } from "@/components/CookieConsent"
-import { AnnouncementBar } from "@/components/AnnouncementBar"
 
 export const metadata: Metadata = {
   title: "GeF Crochet — Handcrafted Crochet",
@@ -21,7 +20,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
       </head>
       <body className="min-h-full flex flex-col antialiased">
-        <AnnouncementBar />
         <CartProvider>
           <CookieConsentProvider>
             <div className="flex flex-col flex-1 pb-16 md:pb-0">

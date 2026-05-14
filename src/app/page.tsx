@@ -5,6 +5,7 @@ import { Header } from "@/components/Header"
 import { Footer } from "@/components/Footer"
 import { NewsletterForm } from "@/components/NewsletterForm"
 import { HeroSlideshow } from "@/components/HeroSlideshow"
+import { AnnouncementBar } from "@/components/AnnouncementBar"
 
 async function getSlides() {
   return prisma.slide.findMany({ where: { isActive: true }, orderBy: { position: "asc" } })
@@ -27,6 +28,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <AnnouncementBar />
       <Header />
       <main className="flex-1">
 
