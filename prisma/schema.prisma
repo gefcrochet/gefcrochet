@@ -8,12 +8,14 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
+  id               String    @id @default(cuid())
+  email            String    @unique
+  passwordHash     String
   name             String?
   resetToken       String?   @unique
   resetTokenExpiry DateTime?
+  totpSecret       String?
+  totpEnabled      Boolean   @default(false)
   createdAt        DateTime  @default(now())
 }
 

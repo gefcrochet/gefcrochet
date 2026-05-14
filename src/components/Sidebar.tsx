@@ -14,6 +14,7 @@ const navItems = [
   { href: "/studio/media", label: "Media", icon: "perm_media" },
   { href: "/studio/slideshow", label: "Slideshow", icon: "slideshow" },
   { href: "/studio/newsletter", label: "Newsletter", icon: "mail" },
+  { href: "/studio/impostazioni", label: "Impostazioni", icon: "settings" },
 ]
 
 export function Sidebar() {

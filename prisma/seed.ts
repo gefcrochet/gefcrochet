@@ -11,9 +11,9 @@ async function main() {
   // Admin user
   const passwordHash = await bcrypt.hash("floraefiber2024", 12)
   await prisma.user.upsert({
-    where: { email: "gef@floraandfiber.it" },
+    where: { email: "info@gefcrochet.it" },
     update: {},
-    create: { email: "gef@floraandfiber.it", passwordHash, name: "Gef" },
+    create: { email: "info@gefcrochet.it", passwordHash, name: "Gef" },
   })
 
   // Categories
@@ -116,7 +116,7 @@ async function main() {
   })
 
   console.log("Seed completato.")
-  console.log("Email: gef@floraandfiber.it")
+  console.log("Email: info@gefcrochet.it")
   console.log("Password: floraefiber2024")
 }
 
