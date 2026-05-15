@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   }
 
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg"
-  const allowed = ["jpg", "jpeg", "png", "webp", "gif", "avif"]
+  const allowed = ["jpg", "jpeg", "png", "webp", "avif", "heic", "heif"]
   if (!allowed.includes(ext)) {
     return Response.json({ error: "Formato non supportato" }, { status: 400 })
   }

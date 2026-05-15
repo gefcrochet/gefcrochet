@@ -3,7 +3,7 @@ import { getSessionFromRequest } from "@/lib/session"
 import { cloudinary } from "@/lib/cloudinary"
 import sharp from "sharp"
 
-const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "avif"]
+const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "avif", "heic", "heif"]
 const MAX_SIZE = 10 * 1024 * 1024
 
 function slugify(str: string) {

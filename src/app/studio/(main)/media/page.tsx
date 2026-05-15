@@ -50,10 +50,14 @@ export default function MediaPage() {
 
   useEffect(() => { loadFiles() }, [loadFiles])
 
-  const ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"])
+  const ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif", "image/heic", "image/heif"])
+  const ACCEPTED_EXTS = new Set(["jpg", "jpeg", "png", "webp", "avif", "heic", "heif"])
 
   async function uploadFiles(fileList: File[]) {
-    const imageFiles = fileList.filter((f) => ACCEPTED_TYPES.has(f.type))
+    const imageFiles = fileList.filter((f) => {
+      if (ACCEPTED_TYPES.has(f.type)) return true
+      return ACCEPTED_EXTS.has(f.name.split(".").pop()?.toLowerCase() ?? "")
+    })
     if (!imageFiles.length) return
     setUploading(true)
 
@@ -128,7 +132,7 @@ export default function MediaPage() {
         <input
           ref={fileRef}
           type="file"
-          accept=".jpg,.jpeg,.png,.webp,.avif"
+          accept=".jpg,.jpeg,.png,.webp,.avif,.heic,.heif"
           multiple
           onChange={onFileChange}
           className="hidden"
@@ -158,7 +162,7 @@ export default function MediaPage() {
               </>
           }
         </p>
-        <p className="text-xs text-on-surface-variant/50 mt-1">JPG, PNG, WebP, AVIF · convertite automaticamente in AVIF</p>
+        <p className="text-xs text-on-surface-variant/50 mt-1">JPG, PNG, WebP, AVIF, HEIC · convertite automaticamente in AVIF</p>
       </div>
 
       {/* Filter */}
