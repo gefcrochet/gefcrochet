@@ -50,8 +50,10 @@ export default function MediaPage() {
 
   useEffect(() => { loadFiles() }, [loadFiles])
 
+  const ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"])
+
   async function uploadFiles(fileList: File[]) {
-    const imageFiles = fileList.filter((f) => f.type.startsWith("image/"))
+    const imageFiles = fileList.filter((f) => ACCEPTED_TYPES.has(f.type))
     if (!imageFiles.length) return
     setUploading(true)
 
@@ -59,6 +61,7 @@ export default function MediaPage() {
       imageFiles.map(async (file) => {
         const fd = new FormData()
         fd.append("file", file)
+        fd.append("name", file.name)
         await fetch("/api/media/upload", { method: "POST", body: fd })
       })
     )
@@ -125,7 +128,7 @@ export default function MediaPage() {
         <input
           ref={fileRef}
           type="file"
-          accept="image/*"
+          accept=".jpg,.jpeg,.png,.webp,.avif"
           multiple
           onChange={onFileChange}
           className="hidden"
@@ -155,7 +158,7 @@ export default function MediaPage() {
               </>
           }
         </p>
-        <p className="text-xs text-on-surface-variant/50 mt-1">JPG, PNG, WebP, GIF, SVG</p>
+        <p className="text-xs text-on-surface-variant/50 mt-1">JPG, PNG, WebP, AVIF · convertite automaticamente in AVIF</p>
       </div>
 
       {/* Filter */}
