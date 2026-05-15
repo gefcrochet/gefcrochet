@@ -5,10 +5,24 @@ import { slugify } from "@/lib/utils"
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
+  const slug = searchParams.get("slug")
   const category = searchParams.get("category")
   const featured = searchParams.get("featured")
   const active = searchParams.get("active")
   const search = searchParams.get("search")
+
+  if (slug) {
+    const product = await prisma.product.findUnique({
+      where: { slug },
+      include: {
+        category: { select: { name: true, slug: true } },
+        images: { orderBy: { position: "asc" }, select: { url: true, alt: true } },
+        tags: { select: { name: true } },
+      },
+    })
+    if (!product) return Response.json(null, { status: 404 })
+    return Response.json(product)
+  }
 
   const products = await prisma.product.findMany({
     where: {
@@ -18,10 +32,10 @@ export async function GET(req: NextRequest) {
       ...(search ? { name: { contains: search } } : {}),
     },
     include: {
-      category: true,
-      images: { orderBy: { position: "asc" } },
-      tags: true,
-      collections: { include: { collection: true }, orderBy: { position: "asc" } },
+      category: { select: { name: true, slug: true } },
+      images: { orderBy: { position: "asc" }, select: { url: true, alt: true } },
+      tags: { select: { name: true } },
+      collections: { include: { collection: { select: { name: true, slug: true } } }, orderBy: { position: "asc" } },
     },
     orderBy: { createdAt: "desc" },
   })

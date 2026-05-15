@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import Link from "next/link"
+import Image from "next/image"
 
 interface Slide {
   id: string
@@ -13,11 +14,11 @@ interface Slide {
 }
 
 export function HeroSlideshow({ slides }: { slides: Slide[] }) {
-  const active = slides.filter((s) => s.isActive)
+  const active = useMemo(() => slides.filter((s) => s.isActive), [slides])
   const [current, setCurrent] = useState(0)
 
   const next = useCallback(() => setCurrent((c) => (c + 1) % active.length), [active.length])
-  const prev = () => setCurrent((c) => (c - 1 + active.length) % active.length)
+  const prev = useCallback(() => setCurrent((c) => (c - 1 + active.length) % active.length), [active.length])
 
   useEffect(() => {
     if (active.length <= 1) return
@@ -48,24 +49,24 @@ export function HeroSlideshow({ slides }: { slides: Slide[] }) {
 
   return (
     <section className="relative w-full h-[90vh] min-h-[560px] overflow-hidden bg-neutral-900">
-      {/* Images — full display, no blend */}
       {active.map((s, i) => (
         <div
           key={s.id}
           className={`absolute inset-0 transition-opacity duration-1000 ${i === current ? "opacity-100" : "opacity-0"}`}
         >
-          <img
+          <Image
             src={s.imageUrl}
             alt={s.caption ?? ""}
-            className="w-full h-full object-cover"
+            fill
+            priority={i === 0}
+            sizes="100vw"
+            className="object-cover"
           />
         </div>
       ))}
 
-      {/* Subtle dark gradient for text legibility */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent z-10" />
 
-      {/* Content */}
       {(slide.caption || slide.linkUrl) && (
         <div className="absolute bottom-0 left-0 right-0 z-20 flex flex-col items-center pb-20 px-6 text-center">
           {slide.caption && (
@@ -84,7 +85,6 @@ export function HeroSlideshow({ slides }: { slides: Slide[] }) {
         </div>
       )}
 
-      {/* Arrows */}
       {active.length > 1 && (
         <>
           <button
@@ -102,7 +102,6 @@ export function HeroSlideshow({ slides }: { slides: Slide[] }) {
             <span className="material-symbols-outlined">chevron_right</span>
           </button>
 
-          {/* Dots */}
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2">
             {active.map((_, i) => (
               <button

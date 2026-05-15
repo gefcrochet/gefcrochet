@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams, notFound } from "next/navigation"
 import Link from "next/link"
 import { formatPrice } from "@/lib/utils"
@@ -23,17 +23,19 @@ export default function ProductPage() {
   const [imgIndex, setImgIndex] = useState(0)
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
+  const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { addItem } = useCart()
 
   useEffect(() => {
-    fetch(`/api/products?active=true`)
-      .then((r) => r.json())
-      .then((products: Product[]) => {
-        const found = products.find((p: Product) => p.slug === slug)
-        setProduct(found ?? null)
+    fetch(`/api/products?slug=${encodeURIComponent(slug)}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((product: Product | null) => {
+        setProduct(product)
         setLoading(false)
       })
   }, [slug])
+
+  useEffect(() => () => { if (addedTimer.current) clearTimeout(addedTimer.current) }, [])
 
   if (loading) return (
     <>
@@ -66,7 +68,7 @@ export default function ProductPage() {
       quantity: qty,
     })
     setAdded(true)
-    setTimeout(() => setAdded(false), 2000)
+    addedTimer.current = setTimeout(() => setAdded(false), 2000)
   }
 
   return (

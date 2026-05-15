@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, useCallback } from "react"
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react"
 
 export interface CartItem {
   productId: string
@@ -32,11 +32,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (stored) setItems(JSON.parse(stored))
     } catch {}
   }, [])
-
-  const persist = (next: CartItem[]) => {
-    setItems(next)
-    localStorage.setItem("ff-cart", JSON.stringify(next))
-  }
 
   const addItem = useCallback((item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
     setItems((prev) => {
@@ -73,8 +68,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("ff-cart")
   }, [])
 
-  const count = items.reduce((s, i) => s + i.quantity, 0)
-  const total = items.reduce((s, i) => s + i.price * i.quantity, 0)
+  const count = useMemo(() => items.reduce((s, i) => s + i.quantity, 0), [items])
+  const total = useMemo(() => items.reduce((s, i) => s + i.price * i.quantity, 0), [items])
 
   return (
     <CartContext.Provider value={{ items, count, total, addItem, removeItem, updateQty, clearCart }}>

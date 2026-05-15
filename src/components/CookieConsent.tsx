@@ -18,6 +18,13 @@ export const useCookieConsent = () => useContext(Ctx)
 
 const STORAGE_KEY = "gef_cookie_consent"
 
+const CATEGORIES = [
+  { key: "necessary" as const, label: "Necessario", description: "Questi cookie sono necessari per il corretto funzionamento del sito, comprese funzionalità come l'accesso e l'aggiunta di articoli al carrello.", required: true },
+  { key: "personalization" as const, label: "Personalizzazione", description: "Questi cookie memorizzano dettagli sulle tue azioni per personalizzare la tua prossima visita al sito." },
+  { key: "marketing" as const, label: "Marketing", description: "Utilizziamo questi cookie per ottimizzare le comunicazioni di marketing e mostrarti annunci pertinenti su altri siti web." },
+  { key: "analytics" as const, label: "Analisi", description: "Questi cookie ci aiutano a capire come interagisci con il sito. Utilizziamo questi dati per identificare le aree da migliorare." },
+]
+
 function loadPrefs(): CookiePrefs | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -80,30 +87,6 @@ export function CookieConsentProvider({ children }: { children: React.ReactNode 
   function toggle(key: keyof Omit<CookiePrefs, "necessary">) {
     setPrefs((prev) => ({ ...prev, [key]: !prev[key] }))
   }
-
-  const categories: { key: keyof Omit<CookiePrefs, "necessary"> | "necessary"; label: string; description: string; required?: boolean }[] = [
-    {
-      key: "necessary",
-      label: "Necessario",
-      description: "Questi cookie sono necessari per il corretto funzionamento del sito, comprese funzionalità come l'accesso e l'aggiunta di articoli al carrello.",
-      required: true,
-    },
-    {
-      key: "personalization",
-      label: "Personalizzazione",
-      description: "Questi cookie memorizzano dettagli sulle tue azioni per personalizzare la tua prossima visita al sito.",
-    },
-    {
-      key: "marketing",
-      label: "Marketing",
-      description: "Utilizziamo questi cookie per ottimizzare le comunicazioni di marketing e mostrarti annunci pertinenti su altri siti web.",
-    },
-    {
-      key: "analytics",
-      label: "Analisi",
-      description: "Questi cookie ci aiutano a capire come interagisci con il sito. Utilizziamo questi dati per identificare le aree da migliorare.",
-    },
-  ]
 
   return (
     <Ctx.Provider value={{ openBanner }}>
@@ -183,7 +166,7 @@ export function CookieConsentProvider({ children }: { children: React.ReactNode 
               </div>
 
               <div className="divide-y divide-gray-100">
-                {categories.map(({ key, label, description, required }) => {
+                {CATEGORIES.map(({ key, label, description, required }) => {
                   const checked = key === "necessary" ? true : prefs[key as keyof Omit<CookiePrefs, "necessary">]
                   return (
                     <div key={key} className="flex items-start gap-4 py-4">

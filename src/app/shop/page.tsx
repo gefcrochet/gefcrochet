@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { prisma } from "@/lib/prisma"
 import { formatPrice } from "@/lib/utils"
 import { Header } from "@/components/Header"
@@ -18,10 +19,15 @@ export default async function ShopPage({ searchParams }: Props) {
         ...(category ? { category: { slug: category } } : {}),
         ...(q ? { name: { contains: q } } : {}),
       },
-      include: { images: { orderBy: { position: "asc" }, take: 1 }, category: true },
+      select: {
+        id: true, name: true, slug: true, price: true, salePrice: true,
+        stock: true, description: true,
+        images: { orderBy: { position: "asc" }, take: 1, select: { url: true } },
+        category: { select: { name: true, slug: true } },
+      },
       orderBy: { createdAt: "desc" },
     }),
-    prisma.category.findMany({ orderBy: { name: "asc" } }),
+    prisma.category.findMany({ select: { id: true, name: true, slug: true }, orderBy: { name: "asc" } }),
   ])
 
   return (
@@ -71,7 +77,7 @@ export default async function ShopPage({ searchParams }: Props) {
                 <div className="bg-surface rounded-2xl overflow-hidden border border-outline-variant/50 shadow-sm hover:shadow-md transition-shadow flex flex-col w-full">
                   <div className="relative aspect-[4/3] bg-surface-container-low overflow-hidden shrink-0">
                     {p.images[0] ? (
-                      <img src={p.images[0].url} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <Image src={p.images[0].url} alt={p.name} fill sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <span className="material-symbols-outlined text-4xl text-on-surface-variant/30">yarn</span>

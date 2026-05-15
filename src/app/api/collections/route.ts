@@ -5,7 +5,12 @@ import { slugify } from "@/lib/utils"
 
 export async function GET() {
   const collections = await prisma.collection.findMany({
-    include: { products: { include: { product: { include: { images: true } } }, orderBy: { position: "asc" } } },
+    include: {
+      products: {
+        select: { product: { select: { id: true, name: true } } },
+        orderBy: { position: "asc" },
+      },
+    },
     orderBy: { createdAt: "desc" },
   })
   return Response.json(collections)

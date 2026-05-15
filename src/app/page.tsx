@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { prisma } from "@/lib/prisma"
 import { formatPrice } from "@/lib/utils"
 import { Header } from "@/components/Header"
@@ -14,13 +15,21 @@ async function getSlides() {
 async function getFeaturedProducts() {
   return prisma.product.findMany({
     where: { isFeatured: true, isActive: true },
-    include: { images: { orderBy: { position: "asc" }, take: 1 }, category: true },
+    select: {
+      id: true, name: true, slug: true, price: true, salePrice: true,
+      category: { select: { name: true } },
+      images: { orderBy: { position: "asc" }, take: 1, select: { url: true } },
+    },
     take: 4,
   })
 }
 
 async function getCollections() {
-  return prisma.collection.findMany({ where: { isActive: true }, orderBy: { createdAt: "desc" } })
+  return prisma.collection.findMany({
+    where: { isActive: true },
+    select: { id: true, name: true, slug: true, heroImageUrl: true },
+    orderBy: { createdAt: "desc" },
+  })
 }
 
 export default async function HomePage() {
@@ -55,7 +64,13 @@ export default async function HomePage() {
                 >
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent z-10" />
                   {coll.heroImageUrl && (
-                    <img src={coll.heroImageUrl} alt={coll.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <Image
+                      src={coll.heroImageUrl}
+                      alt={coll.name}
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 66vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
                   )}
                   <div className="absolute bottom-0 left-0 p-8 text-white z-20">
                     <span className="text-white/60 text-xs font-semibold tracking-widest uppercase mb-2 block">Esplora</span>
@@ -74,10 +89,12 @@ export default async function HomePage() {
         <section className="py-20 px-4 sm:px-6 max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="relative aspect-[4/5] md:aspect-square rounded-[32px] overflow-hidden bg-surface-container-low">
-              <img
+              <Image
                 src="https://images.unsplash.com/photo-1606466986616-e4d0d0877995?auto=format&fit=crop&q=80"
                 alt="GeF Crochet Studio"
-                className="w-full h-full object-cover"
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover"
               />
               <div className="absolute bottom-6 right-6 bg-surface text-center py-4 px-6 rounded-2xl shadow-xl">
                 <p className="font-newsreader text-2xl text-primary mb-0.5">5+ anni</p>
@@ -126,10 +143,12 @@ export default async function HomePage() {
                 <Link key={p.id} href={`/shop/${p.slug}`} className="group cursor-pointer">
                   <div className="relative aspect-square rounded-xl overflow-hidden bg-surface-container-low mb-4">
                     {p.images[0] ? (
-                      <img
+                      <Image
                         src={p.images[0].url}
                         alt={p.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        fill
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
