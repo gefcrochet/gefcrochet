@@ -66,7 +66,11 @@ export default function EditProductPage() {
   }
 
   async function handleDelete() {
-    await fetch(`/api/products/${id}`, { method: "DELETE" })
+    const res = await fetch(`/api/products/${id}`, { method: "DELETE" })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      throw new Error(data.error ?? "Errore durante l'eliminazione")
+    }
   }
 
   if (!initial) return <div className="p-6 text-sm text-on-surface-variant">Caricamento…</div>

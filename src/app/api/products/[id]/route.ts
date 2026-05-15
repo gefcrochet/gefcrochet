@@ -76,6 +76,12 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (!session) return Response.json({ error: "Non autorizzato" }, { status: 401 })
 
   const { id } = await params
-  await prisma.product.delete({ where: { id } })
-  return new Response(null, { status: 204 })
+  try {
+    await prisma.collectionProduct.deleteMany({ where: { productId: id } })
+    await prisma.product.delete({ where: { id } })
+    return new Response(null, { status: 204 })
+  } catch (err) {
+    console.error("Delete product error:", err)
+    return Response.json({ error: "Impossibile eliminare il prodotto" }, { status: 500 })
+  }
 }

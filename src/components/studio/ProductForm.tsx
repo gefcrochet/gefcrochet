@@ -181,8 +181,12 @@ export function ProductForm({ initial, collections, submitLabel, onSubmit, delet
   async function handleDelete() {
     if (!deleteAction) return
     if (!confirm("Eliminare questo prodotto?")) return
-    await deleteAction()
-    router.push("/studio/products")
+    try {
+      await deleteAction()
+      router.push("/studio/products")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Errore durante l'eliminazione")
+    }
   }
 
   // ─── Render ──────────────────────────────────────────────────────────────
