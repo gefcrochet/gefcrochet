@@ -127,35 +127,25 @@ export default function ProductPage() {
 
             <p className="text-on-surface-variant leading-relaxed mb-6">{product.description}</p>
 
-            {/* Stock */}
-            {product.stock <= 3 && product.stock > 0 && (
-              <p className="text-sm text-amber-600 mb-4">Solo {product.stock} rimasti</p>
-            )}
-            {product.stock === 0 && (
-              <p className="text-sm text-error mb-4">Esaurito</p>
-            )}
-
             {/* Qty + CTA */}
-            {product.stock > 0 && (
-              <div className="flex items-center gap-3 mb-6">
-                <div className="flex items-center border border-outline-variant rounded-xl overflow-hidden">
-                  <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="px-3 py-2 text-on-surface-variant hover:bg-surface-container transition-colors">
-                    <span className="material-symbols-outlined text-[18px]">remove</span>
-                  </button>
-                  <span className="px-4 py-2 text-on-surface font-medium text-sm">{qty}</span>
-                  <button onClick={() => setQty((q) => Math.min(product.stock, q + 1))} className="px-3 py-2 text-on-surface-variant hover:bg-surface-container transition-colors">
-                    <span className="material-symbols-outlined text-[18px]">add</span>
-                  </button>
-                </div>
-                <button
-                  onClick={handleAddToCart}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl font-medium text-sm transition-all ${added ? "bg-green-600 text-white" : "bg-primary text-on-primary hover:bg-primary/90"}`}
-                >
-                  <span className="material-symbols-outlined text-[18px]">{added ? "check" : "shopping_bag"}</span>
-                  {added ? "Aggiunto!" : "Aggiungi al carrello"}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex items-center border border-outline-variant rounded-xl overflow-hidden">
+                <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="px-3 py-2 text-on-surface-variant hover:bg-surface-container transition-colors">
+                  <span className="material-symbols-outlined text-[18px]">remove</span>
+                </button>
+                <span className="px-4 py-2 text-on-surface font-medium text-sm">{qty}</span>
+                <button onClick={() => setQty((q) => q + 1)} className="px-3 py-2 text-on-surface-variant hover:bg-surface-container transition-colors">
+                  <span className="material-symbols-outlined text-[18px]">add</span>
                 </button>
               </div>
-            )}
+              <button
+                onClick={handleAddToCart}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl font-medium text-sm transition-all ${added ? "bg-green-600 text-white" : "bg-primary text-on-primary hover:bg-primary/90"}`}
+              >
+                <span className="material-symbols-outlined text-[18px]">{added ? "check" : "shopping_bag"}</span>
+                {added ? "Aggiunto!" : "Aggiungi al carrello"}
+              </button>
+            </div>
 
             {/* Tags */}
             {product.tags.length > 0 && (

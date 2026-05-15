@@ -4,31 +4,40 @@ import { prisma } from "@/lib/prisma"
 import { formatPrice } from "@/lib/utils"
 import { Header } from "@/components/Header"
 import { Footer } from "@/components/Footer"
+import { unstable_cache } from "next/cache"
 
 interface Props {
   searchParams: Promise<{ category?: string; q?: string }>
 }
 
+const getShopData = unstable_cache(
+  async (category?: string, q?: string) => {
+    return Promise.all([
+      prisma.product.findMany({
+        where: {
+          isActive: true,
+          ...(category ? { category: { slug: category } } : {}),
+          ...(q ? { name: { contains: q } } : {}),
+        },
+        select: {
+          id: true, name: true, slug: true, price: true, salePrice: true,
+          description: true,
+          images: { orderBy: { position: "asc" }, take: 1, select: { url: true } },
+          category: { select: { name: true, slug: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.category.findMany({ select: { id: true, name: true, slug: true }, orderBy: { name: "asc" } }),
+    ])
+  },
+  ["shop-data"],
+  { revalidate: 3600 }
+)
+
 export default async function ShopPage({ searchParams }: Props) {
   const { category, q } = await searchParams
 
-  const [products, categories] = await Promise.all([
-    prisma.product.findMany({
-      where: {
-        isActive: true,
-        ...(category ? { category: { slug: category } } : {}),
-        ...(q ? { name: { contains: q } } : {}),
-      },
-      select: {
-        id: true, name: true, slug: true, price: true, salePrice: true,
-        stock: true, description: true,
-        images: { orderBy: { position: "asc" }, take: 1, select: { url: true } },
-        category: { select: { name: true, slug: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.category.findMany({ select: { id: true, name: true, slug: true }, orderBy: { name: "asc" } }),
-  ])
+  const [products, categories] = await getShopData(category, q)
 
   return (
     <>
@@ -103,17 +112,6 @@ export default async function ShopPage({ searchParams }: Props) {
                       </p>
                     )}
                     
-                    <div className="flex items-center gap-4 text-xs text-on-surface-variant mb-5 mt-auto font-medium">
-                      <div className="flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[16px]">inventory_2</span>
-                        {p.stock > 0 ? `${p.stock} disp.` : "Esaurito"}
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[16px]">local_shipping</span>
-                        Sped. 24/48h
-                      </div>
-                    </div>
-
                     <div className="mt-auto">
                       <div className="w-full bg-[#4A5D4E] text-white group-hover:bg-[#3D4D40] transition-colors py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 font-medium text-sm shadow-sm">
                         <span className="material-symbols-outlined text-[18px]">shopping_bag</span>
