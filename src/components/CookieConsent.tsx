@@ -35,6 +35,7 @@ function savePrefs(prefs: CookiePrefs) {
 
 export function CookieConsentProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false)
+  const [mode, setMode] = useState<"mini" | "full">("mini")
   const [prefs, setPrefs] = useState<CookiePrefs>({
     necessary: true,
     personalization: true,
@@ -45,13 +46,17 @@ export function CookieConsentProvider({ children }: { children: React.ReactNode 
   useEffect(() => {
     const saved = loadPrefs()
     if (!saved) {
+      setMode("mini")
       setOpen(true)
     } else {
       setPrefs(saved)
     }
   }, [])
 
-  const openBanner = useCallback(() => setOpen(true), [])
+  const openBanner = useCallback(() => {
+    setMode("full")
+    setOpen(true)
+  }, [])
 
   function acceptAll() {
     const p: CookiePrefs = { necessary: true, personalization: true, marketing: true, analytics: true }
@@ -104,7 +109,38 @@ export function CookieConsentProvider({ children }: { children: React.ReactNode 
     <Ctx.Provider value={{ openBanner }}>
       {children}
 
-      {open && (
+      {open && mode === "mini" && (
+        <div className="fixed bottom-20 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:max-w-sm z-[100]">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 px-5 py-4">
+            <p className="text-sm font-semibold text-gray-900 mb-1">Cookie e privacy</p>
+            <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+              Utilizziamo i cookie per migliorare la tua esperienza. Puoi scegliere quali accettare.
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={acceptAll}
+                className="flex-1 px-3 py-2 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-gray-700 transition-colors"
+              >
+                Accetta tutti
+              </button>
+              <button
+                onClick={rejectAll}
+                className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition-colors"
+              >
+                Rifiuta
+              </button>
+              <button
+                onClick={() => setMode("full")}
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-gray-500 text-xs hover:bg-gray-50 transition-colors"
+              >
+                Personalizza
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {open && mode === "full" && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-0 sm:p-4">
           <div className="w-full sm:max-w-2xl bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
             {/* Header */}
