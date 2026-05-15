@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { formatPrice } from "@/lib/utils"
+import { Toggle } from "@/components/studio/Toggle"
 
 interface Product {
   id: string
@@ -113,14 +114,10 @@ export default function ProductsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => toggleActive(p.id, p.isActive)}
-                      className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        p.isActive ? "bg-green-100 text-green-700" : "bg-surface-container text-on-surface-variant"
-                      }`}
-                    >
-                      {p.isActive ? "Attivo" : "Bozza"}
-                    </button>
+                    <Toggle
+                      checked={p.isActive}
+                      onChange={() => toggleActive(p.id, p.isActive)}
+                    />
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Link href={`/studio/products/${p.id}`} className="text-primary text-xs font-medium hover:underline">

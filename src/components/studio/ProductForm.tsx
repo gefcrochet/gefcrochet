@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import { Toggle } from "@/components/studio/Toggle"
 
 function slugify(str: string) {
   return str
@@ -400,17 +401,13 @@ export function ProductForm({ initial, collections, submitLabel, onSubmit, delet
         )}
       </Field>
 
-      {/* Checkbox */}
+      {/* Visibilità e opzioni */}
       <div className="flex gap-6">
-        <label className="flex items-center gap-2 text-sm text-on-surface cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={form.isActive}
-            onChange={(e) => set("isActive", e.target.checked)}
-            className="rounded"
-          />
-          Attivo (visibile nel negozio)
-        </label>
+        <Toggle
+          checked={form.isActive}
+          onChange={(v) => set("isActive", v)}
+          label="Visibile nel negozio"
+        />
         <label className="flex items-center gap-2 text-sm text-on-surface cursor-pointer select-none">
           <input
             type="checkbox"

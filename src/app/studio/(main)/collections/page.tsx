@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Toggle } from "@/components/studio/Toggle"
 
 interface Collection {
   id: string
@@ -157,12 +158,10 @@ export default function CollectionsPage() {
                   <p className="font-medium text-on-surface truncate">{c.name}</p>
                   <p className="text-xs text-on-surface-variant">/{c.slug}</p>
                 </div>
-                <button
-                  onClick={() => toggleActive(c.id, c.isActive)}
-                  className={`px-2.5 py-0.5 rounded-full text-xs font-medium shrink-0 ${c.isActive ? "bg-green-100 text-green-700" : "bg-surface-container text-on-surface-variant"}`}
-                >
-                  {c.isActive ? "Attiva" : "Nascosta"}
-                </button>
+                <Toggle
+                  checked={c.isActive}
+                  onChange={() => toggleActive(c.id, c.isActive)}
+                />
               </div>
 
               {c.description && (
