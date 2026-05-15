@@ -154,6 +154,12 @@ model SiteSettings {
   id                 String   @id @default("default")
   announcementText   String?
   announcementActive Boolean  @default(false)
+  smtpHost           String?
+  smtpPort           Int?
+  smtpSecure         Boolean  @default(false)
+  smtpUser           String?
+  smtpPass           String?
+  smtpFrom           String?
 }
 
 model LoginAttempt {

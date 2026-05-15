@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Toggle } from "@/components/studio/Toggle"
 
 interface Slide {
   id: string
@@ -414,12 +415,12 @@ export default function SlideshowPage() {
                 >
                   <span className="material-symbols-outlined text-[18px]">arrow_downward</span>
                 </button>
-                <button
-                  onClick={() => toggleActive(slide.id, slide.isActive)}
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium ml-1 ${slide.isActive ? "bg-green-100 text-green-700" : "bg-surface-container text-on-surface-variant"}`}
-                >
-                  {slide.isActive ? "Visibile" : "Nascosta"}
-                </button>
+                <div className="ml-1">
+                  <Toggle
+                    checked={slide.isActive}
+                    onChange={() => toggleActive(slide.id, slide.isActive)}
+                  />
+                </div>
                 <button
                   onClick={() => startEdit(slide)}
                   className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors ml-1"

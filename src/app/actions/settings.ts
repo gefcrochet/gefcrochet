@@ -4,6 +4,71 @@ import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { getSession } from "@/lib/session"
 
+export async function getSmtpSettings(): Promise<{
+  host: string; port: number; secure: boolean; user: string; from: string; hasPass: boolean
+}> {
+  const s = await prisma.siteSettings.findUnique({ where: { id: "default" } })
+  return {
+    host: s?.smtpHost ?? "",
+    port: s?.smtpPort ?? 587,
+    secure: s?.smtpSecure ?? false,
+    user: s?.smtpUser ?? "",
+    from: s?.smtpFrom ?? "",
+    hasPass: !!(s?.smtpPass),
+  }
+}
+
+export async function saveSmtpSettings(
+  formData: FormData
+): Promise<{ error?: string; success?: boolean }> {
+  await requireUser()
+  const host = (formData.get("smtpHost") as string).trim()
+  const port = parseInt(formData.get("smtpPort") as string) || 587
+  const secure = formData.get("smtpSecure") === "true"
+  const user = (formData.get("smtpUser") as string).trim()
+  const pass = (formData.get("smtpPass") as string).trim()
+  const from = (formData.get("smtpFrom") as string).trim()
+
+  const existing = await prisma.siteSettings.findUnique({ where: { id: "default" } })
+
+  await prisma.siteSettings.upsert({
+    where: { id: "default" },
+    update: {
+      smtpHost: host || null,
+      smtpPort: port,
+      smtpSecure: secure,
+      smtpUser: user || null,
+      smtpPass: pass || existing?.smtpPass || null,
+      smtpFrom: from || null,
+    },
+    create: {
+      id: "default",
+      smtpHost: host || null,
+      smtpPort: port,
+      smtpSecure: secure,
+      smtpUser: user || null,
+      smtpPass: pass || null,
+      smtpFrom: from || null,
+    },
+  })
+  return { success: true }
+}
+
+export async function testSmtp(): Promise<{ error?: string; success?: boolean }> {
+  const user = await requireUser()
+  try {
+    const { sendEmail } = await import("@/lib/email")
+    await sendEmail({
+      to: user.email,
+      subject: "Test SMTP - GeF Crochet Studio",
+      html: "<p>✅ Configurazione SMTP funzionante!</p><p>Questa è un'email di test inviata da GeF Crochet Studio.</p>",
+    })
+    return { success: true }
+  } catch (err) {
+    return { error: (err as Error).message }
+  }
+}
+
 async function requireUser() {
   const session = await getSession()
   if (!session) throw new Error("Non autenticato")

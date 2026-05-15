@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { changePassword, getTotpStatus, setupTotp, enableTotp, disableTotp } from "@/app/actions/settings"
+import { changePassword, getTotpStatus, setupTotp, enableTotp, disableTotp, getSmtpSettings, saveSmtpSettings, testSmtp } from "@/app/actions/settings"
 
 type TotpStep = "idle" | "setup" | "verify"
 
@@ -18,8 +18,22 @@ export default function ImpostazioniPage() {
   const [totpLoading, setTotpLoading] = useState(false)
   const [totpSuccess, setTotpSuccess] = useState<string | null>(null)
 
+  // SMTP state
+  const [smtp, setSmtp] = useState({ host: "", port: 587, secure: false, user: "", from: "" })
+  const [smtpPass, setSmtpPass] = useState("")
+  const [smtpHasPass, setSmtpHasPass] = useState(false)
+  const [smtpSaving, setSmtpSaving] = useState(false)
+  const [smtpSaved, setSmtpSaved] = useState(false)
+  const [smtpError, setSmtpError] = useState<string | null>(null)
+  const [smtpTesting, setSmtpTesting] = useState(false)
+  const [smtpTestResult, setSmtpTestResult] = useState<{ ok: boolean; msg: string } | null>(null)
+
   useEffect(() => {
     getTotpStatus().then(({ enabled }) => setTotpEnabled(enabled))
+    getSmtpSettings().then((s) => {
+      setSmtp({ host: s.host, port: s.port, secure: s.secure, user: s.user, from: s.from })
+      setSmtpHasPass(s.hasPass)
+    })
   }, [])
 
   async function handleChangePassword(e: React.FormEvent<HTMLFormElement>) {
@@ -66,6 +80,40 @@ export default function ImpostazioniPage() {
     setTotpStep("idle")
     setTotpSuccess("Autenticazione a due fattori disattivata.")
     setTotpLoading(false)
+  }
+
+  async function handleSaveSmtp(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setSmtpSaving(true)
+    setSmtpError(null)
+    setSmtpSaved(false)
+    const fd = new FormData()
+    fd.append("smtpHost", smtp.host)
+    fd.append("smtpPort", String(smtp.port))
+    fd.append("smtpSecure", String(smtp.secure))
+    fd.append("smtpUser", smtp.user)
+    fd.append("smtpPass", smtpPass)
+    fd.append("smtpFrom", smtp.from)
+    const result = await saveSmtpSettings(fd)
+    if (result.error) setSmtpError(result.error)
+    else {
+      setSmtpSaved(true)
+      setSmtpPass("")
+      if (smtpPass) setSmtpHasPass(true)
+      setTimeout(() => setSmtpSaved(false), 2500)
+    }
+    setSmtpSaving(false)
+  }
+
+  async function handleTestSmtp() {
+    setSmtpTesting(true)
+    setSmtpTestResult(null)
+    const result = await testSmtp()
+    setSmtpTestResult(result.success
+      ? { ok: true, msg: "Email di test inviata! Controlla la tua casella." }
+      : { ok: false, msg: result.error ?? "Errore sconosciuto" }
+    )
+    setSmtpTesting(false)
   }
 
   return (
@@ -207,6 +255,121 @@ export default function ImpostazioniPage() {
             </form>
           </div>
         )}
+      </section>
+
+      {/* SMTP */}
+      <section className="bg-surface-container-low border border-outline-variant rounded-2xl p-6 space-y-5">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-[20px]">mail</span>
+          <h2 className="text-base font-semibold text-on-surface">Configurazione Email SMTP</h2>
+        </div>
+        <p className="text-sm text-on-surface-variant">
+          Usata per inviare le email di recupero password e notifiche del sito. Lascia vuoto per usare le variabili d&apos;ambiente.
+        </p>
+
+        <form onSubmit={handleSaveSmtp} className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2 sm:col-span-1">
+              <label className="block text-sm font-medium text-on-surface mb-1">Host SMTP</label>
+              <input
+                value={smtp.host}
+                onChange={(e) => setSmtp((s) => ({ ...s, host: e.target.value }))}
+                placeholder="smtp.gmail.com"
+                className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-on-surface mb-1">Porta</label>
+              <input
+                type="number"
+                value={smtp.port}
+                onChange={(e) => setSmtp((s) => ({ ...s, port: parseInt(e.target.value) || 587 }))}
+                placeholder="587"
+                className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-on-surface mb-1">Utente (email mittente)</label>
+            <input
+              type="email"
+              value={smtp.user}
+              onChange={(e) => setSmtp((s) => ({ ...s, user: e.target.value }))}
+              placeholder="info@gefcrochet.it"
+              className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-on-surface mb-1">
+              Password
+              {smtpHasPass && <span className="ml-2 text-xs text-on-surface-variant font-normal">(già configurata — lascia vuoto per non cambiarla)</span>}
+            </label>
+            <input
+              type="password"
+              value={smtpPass}
+              onChange={(e) => setSmtpPass(e.target.value)}
+              placeholder={smtpHasPass ? "••••••••" : "Password SMTP"}
+              autoComplete="new-password"
+              className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-on-surface mb-1">Indirizzo mittente (from)</label>
+            <input
+              value={smtp.from}
+              onChange={(e) => setSmtp((s) => ({ ...s, from: e.target.value }))}
+              placeholder="no-reply@gefcrochet.it"
+              className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <label className="inline-flex items-center gap-2.5 cursor-pointer select-none">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={smtp.secure}
+                onClick={() => setSmtp((s) => ({ ...s, secure: !s.secure }))}
+                className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${smtp.secure ? "bg-green-500" : "bg-gray-300"}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${smtp.secure ? "translate-x-[18px]" : "translate-x-0.5"}`} />
+              </button>
+              <span className="text-sm text-on-surface">SSL/TLS (porta 465)</span>
+            </label>
+          </div>
+
+          {smtpError && (
+            <p className="text-sm text-error bg-error-container rounded-lg px-3 py-2">{smtpError}</p>
+          )}
+
+          {smtpTestResult && (
+            <p className={`text-sm rounded-lg px-3 py-2 ${smtpTestResult.ok ? "text-on-primary-container bg-primary-container" : "text-error bg-error-container"}`}>
+              {smtpTestResult.msg}
+            </p>
+          )}
+
+          <div className="flex items-center gap-3 pt-1">
+            <button
+              type="submit"
+              disabled={smtpSaving}
+              className="bg-primary text-on-primary px-4 py-2 rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60"
+            >
+              {smtpSaving ? "Salvataggio…" : smtpSaved ? "Salvato ✓" : "Salva"}
+            </button>
+            <button
+              type="button"
+              onClick={handleTestSmtp}
+              disabled={smtpTesting}
+              className="border border-outline-variant text-on-surface px-4 py-2 rounded-lg text-sm font-medium hover:bg-surface-container transition-colors disabled:opacity-60 flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-[16px]">send</span>
+              {smtpTesting ? "Invio…" : "Invia email di test"}
+            </button>
+          </div>
+        </form>
       </section>
     </div>
   )

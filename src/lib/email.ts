@@ -1,11 +1,27 @@
 import nodemailer from "nodemailer"
 
-// Create a transporter. For development, if no SMTP is provided, 
-// we will just log the email to the console.
 export async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
-  const isSmtpConfigured = !!(process.env.SMTP_HOST && process.env.SMTP_USER)
+  let host = process.env.SMTP_HOST
+  let port = Number(process.env.SMTP_PORT) || 587
+  let user = process.env.SMTP_USER
+  let pass = process.env.SMTP_PASS
+  let from = process.env.SMTP_FROM || "no-reply@gefcrochet.it"
+  let secure = process.env.SMTP_SECURE === "true"
 
-  if (!isSmtpConfigured) {
+  try {
+    const { prisma } = await import("@/lib/prisma")
+    const settings = await prisma.siteSettings.findUnique({ where: { id: "default" } })
+    if (settings?.smtpHost) {
+      host = settings.smtpHost
+      if (settings.smtpPort) port = settings.smtpPort
+      if (settings.smtpUser) user = settings.smtpUser
+      if (settings.smtpPass) pass = settings.smtpPass
+      if (settings.smtpFrom) from = settings.smtpFrom
+      secure = settings.smtpSecure
+    }
+  } catch {}
+
+  if (!host || !user) {
     console.log("\n=============================================")
     console.log(`[EMAIL MOCK] To: ${to}`)
     console.log(`[EMAIL MOCK] Subject: ${subject}`)
@@ -15,17 +31,14 @@ export async function sendEmail({ to, subject, html }: { to: string; subject: st
   }
 
   const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT) || 587,
-    secure: process.env.SMTP_SECURE === "true",
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
+    host,
+    port,
+    secure,
+    auth: { user, pass },
   })
 
   await transporter.sendMail({
-    from: `"GeF Crochet" <${process.env.SMTP_FROM || "no-reply@gefcrochet.it"}>`,
+    from: `"GeF Crochet" <${from}>`,
     to,
     subject,
     html,
