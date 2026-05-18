@@ -29,7 +29,7 @@ async function getFeaturedProducts() {
 async function getCollections() {
   return prisma.collection.findMany({
     where: { isActive: true },
-    select: { id: true, name: true, slug: true, heroImageUrl: true },
+    select: { id: true, name: true, slug: true, description: true, heroImageUrl: true },
     orderBy: { position: "asc" },
   })
 }
@@ -60,26 +60,41 @@ export default async function HomePage() {
                 <Link
                   key={coll.id}
                   href={`/shop?collection=${coll.slug}`}
-                  className={`group relative rounded-[28px] overflow-hidden cursor-pointer transition-all ${
-                    i === 0 ? "md:col-span-2 h-[340px]" : "h-[280px]"
+                  className={`group relative rounded-[28px] overflow-hidden flex flex-col ${
+                    i === 0 ? "md:col-span-2 h-[400px]" : "h-[320px]"
                   } bg-surface-container`}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent z-10" />
-                  {coll.heroImageUrl && (
-                    <Image
-                      src={coll.heroImageUrl}
-                      alt={coll.name}
-                      fill
-                      sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 66vw"
-                      className="object-cover group-hover:scale-105 transition-transform duration-700"
-                    />
-                  )}
-                  <div className="absolute bottom-0 left-0 p-8 text-white z-20">
-                    <span className="text-white/60 text-xs font-semibold tracking-widest uppercase mb-2 block">Esplora</span>
-                    <h3 className="font-newsreader text-2xl font-normal mb-3">{coll.name}</h3>
-                    <span className="inline-flex items-center gap-2 text-sm font-semibold tracking-wide group-hover:gap-3 transition-all">
-                      Vedi tutto <span className="material-symbols-outlined text-base">arrow_forward</span>
-                    </span>
+                  {/* image or placeholder */}
+                  <div className="absolute inset-0">
+                    {coll.heroImageUrl ? (
+                      <Image
+                        src={coll.heroImageUrl}
+                        alt={coll.name}
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 66vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-primary-container via-surface-container to-surface-container-high flex items-center justify-center">
+                        <span className="material-symbols-outlined text-[80px] text-primary/20">yarn</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* frosted-glass title bar */}
+                  <div className="absolute bottom-0 inset-x-0 z-20 backdrop-blur-md bg-surface/80 border-t border-outline-variant/30 px-6 py-4">
+                    <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-on-surface-variant mb-1">Collezione</p>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="font-newsreader text-xl font-normal text-on-surface truncate">{coll.name}</h3>
+                        {coll.description && (
+                          <p className="text-xs text-on-surface-variant line-clamp-1 mt-0.5">{coll.description}</p>
+                        )}
+                      </div>
+                      <span className="material-symbols-outlined text-on-surface-variant flex-shrink-0 group-hover:translate-x-1 transition-transform duration-200">
+                        arrow_forward
+                      </span>
+                    </div>
                   </div>
                 </Link>
               ))}
