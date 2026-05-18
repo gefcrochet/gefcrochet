@@ -114,7 +114,7 @@ export default async function HomePage() {
                 className="object-cover"
               />
               <div className="absolute bottom-6 right-6 bg-surface text-center py-4 px-6 rounded-2xl shadow-xl">
-                <p className="font-newsreader text-xl text-primary tracking-wide">MADE IN ITALY</p>
+                <p className="font-newsreader text-xl text-primary tracking-wide">HANDMADE IN ITALY</p>
               </div>
             </div>
             <div className="max-w-md">
