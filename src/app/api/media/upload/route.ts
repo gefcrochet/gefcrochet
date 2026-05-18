@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   const uploadBuffer = ext !== "avif" ? await sharp(raw).avif({ quality: 80 }).toBuffer() : raw
 
   const cloudinaryFolder = folder
-    ? `gefcrochet/${folder.replace(/[^a-z0-9_\-]/gi, "-")}`
+    ? `gefcrochet/${folder.replace(/[^a-z0-9_\-\/]/gi, "-").replace(/\/+/g, "/").replace(/^\/+|\/+$/g, "")}`
     : "gefcrochet"
 
   const result = await new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {

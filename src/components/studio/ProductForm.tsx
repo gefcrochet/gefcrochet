@@ -123,7 +123,8 @@ export function ProductForm({ initial, collections, submitLabel, onSubmit, delet
         const fd = new FormData()
         fd.append("file", file)
         fd.append("folder", folder)
-        const res = await fetch("/api/upload", { method: "POST", body: fd })
+        fd.append("name", file.name)
+        const res = await fetch("/api/media/upload", { method: "POST", body: fd })
         if (!res.ok) return null
         const { url } = await res.json()
         return { id: placeholders[i].id, url }
