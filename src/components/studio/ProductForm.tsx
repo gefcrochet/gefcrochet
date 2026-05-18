@@ -4,6 +4,9 @@ import { useState, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Toggle } from "@/components/studio/Toggle"
 
+const ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif", "image/heic", "image/heif"])
+const ACCEPTED_EXTS = new Set(["jpg", "jpeg", "png", "webp", "avif", "heic", "heif"])
+
 function slugify(str: string) {
   return str
     .toLowerCase()
@@ -66,6 +69,10 @@ export function ProductForm({ initial, collections, submitLabel, onSubmit, delet
   const [dragOver, setDragOver] = useState(false)
   const [dragImgId, setDragImgId] = useState<string | null>(null)
   const [dragOverImgId, setDragOverImgId] = useState<string | null>(null)
+  const [imageTab, setImageTab] = useState<"upload" | "media">("upload")
+  const [mediaFiles, setMediaFiles] = useState<{ url: string; name: string; folder: string }[]>([])
+  const [mediaLoading, setMediaLoading] = useState(false)
+  const [mediaFilter, setMediaFilter] = useState("")
   const fileRef = useRef<HTMLInputElement>(null)
   const colorRef = useRef<HTMLInputElement>(null)
 
@@ -74,8 +81,30 @@ export function ProductForm({ initial, collections, submitLabel, onSubmit, delet
 
   // ─── Image upload ────────────────────────────────────────────────────────────
 
+  async function loadMedia() {
+    if (mediaFiles.length > 0) return
+    setMediaLoading(true)
+    try {
+      const res = await fetch("/api/media")
+      if (res.ok) setMediaFiles(await res.json())
+    } finally {
+      setMediaLoading(false)
+    }
+  }
+
+  function toggleMediaImage(f: { url: string; name: string }) {
+    setForm((prev) => {
+      const exists = prev.images.some((img) => img.url === f.url)
+      if (exists) return { ...prev, images: prev.images.filter((img) => img.url !== f.url) }
+      return { ...prev, images: [...prev.images, { id: `lib-${f.url}`, url: f.url, alt: f.name, uploading: false }] }
+    })
+  }
+
   async function uploadFiles(files: File[]) {
-    const imageFiles = files.filter((f) => f.type.startsWith("image/"))
+    const imageFiles = files.filter((f) => {
+      if (ACCEPTED_TYPES.has(f.type)) return true
+      return ACCEPTED_EXTS.has(f.name.split(".").pop()?.toLowerCase() ?? "")
+    })
     if (!imageFiles.length) return
 
     const placeholders: ImageItem[] = imageFiles.map((f) => ({
@@ -86,9 +115,8 @@ export function ProductForm({ initial, collections, submitLabel, onSubmit, delet
     }))
     setForm((prev) => ({ ...prev, images: [...prev.images, ...placeholders] }))
 
-    // Build folder name from current product name (or generic fallback)
     const productSlug = form.name.trim() ? slugify(form.name) : "prodotto"
-    const folder = `media/${productSlug}`
+    const folder = `products/${productSlug}`
 
     const uploaded = await Promise.all(
       imageFiles.map(async (file, i) => {
@@ -104,11 +132,13 @@ export function ProductForm({ initial, collections, submitLabel, onSubmit, delet
 
     setForm((prev) => ({
       ...prev,
-      images: prev.images.map((img) => {
-        const match = uploaded.find((u) => u?.id === img.id)
-        if (match) return { ...img, url: match.url, uploading: false }
-        return img
-      }).filter((img) => !img.uploading || uploaded.some((u) => u?.id === img.id)),
+      images: prev.images
+        .map((img) => {
+          const match = uploaded.find((u) => u?.id === img.id)
+          if (match) return { ...img, url: match.url, uploading: false }
+          return img
+        })
+        .filter((img) => !img.uploading || uploaded.some((u) => u?.id === img.id)),
     }))
   }
 
@@ -331,37 +361,115 @@ export function ProductForm({ initial, collections, submitLabel, onSubmit, delet
         </div>
       </Field>
 
-      {/* Immagini — drop zone */}
-      <Field label="Immagini prodotto" hint="Trascina qui le immagini o clicca per selezionarle. Riordinale trascinandole.">
-        <div
-          onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={onDrop}
-          onClick={() => fileRef.current?.click()}
-          className={`relative border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-colors mb-4 ${
-            dragOver
-              ? "border-primary bg-primary/5"
-              : "border-outline-variant hover:border-primary/50 hover:bg-surface-container/50"
-          }`}
-        >
-          <span className="material-symbols-outlined text-4xl text-on-surface-variant/40 block mb-2">upload</span>
-          <p className="text-sm text-on-surface-variant">
-            <span className="text-primary font-medium">Clicca</span> o trascina le immagini qui
-          </p>
-          <p className="text-xs text-on-surface-variant/60 mt-1">JPG, PNG, WebP</p>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={onFileChange}
-            className="hidden"
-          />
+      {/* Immagini */}
+      <Field label="Immagini prodotto" hint="La prima immagine sarà la cover. Riordina trascinando.">
+
+        {/* Tabs */}
+        <div className="flex gap-1 mb-3 bg-surface-container rounded-xl p-1 w-fit">
+          <button
+            type="button"
+            onClick={() => setImageTab("upload")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${imageTab === "upload" ? "bg-surface text-on-surface shadow-sm" : "text-on-surface-variant hover:text-on-surface"}`}
+          >
+            <span className="flex items-center gap-1">
+              <span className="material-symbols-outlined text-[13px]">upload</span>
+              Carica
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => { setImageTab("media"); loadMedia() }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${imageTab === "media" ? "bg-surface text-on-surface shadow-sm" : "text-on-surface-variant hover:text-on-surface"}`}
+          >
+            <span className="flex items-center gap-1">
+              <span className="material-symbols-outlined text-[13px]">perm_media</span>
+              Libreria media
+            </span>
+          </button>
         </div>
 
-        {/* Image grid */}
+        {imageTab === "upload" ? (
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={onDrop}
+            onClick={() => fileRef.current?.click()}
+            className={`relative border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-colors mb-4 ${
+              dragOver ? "border-primary bg-primary/5" : "border-outline-variant hover:border-primary/50 hover:bg-surface-container/50"
+            }`}
+          >
+            <span className="material-symbols-outlined text-4xl text-on-surface-variant/40 block mb-2">upload</span>
+            <p className="text-sm text-on-surface-variant">
+              <span className="text-primary font-medium">Clicca</span> o trascina le immagini qui
+            </p>
+            <p className="text-xs text-on-surface-variant/60 mt-1">JPG, PNG, WebP, AVIF, HEIC · convertite automaticamente in AVIF</p>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".jpg,.jpeg,.png,.webp,.avif,.heic,.heif"
+              multiple
+              onChange={onFileChange}
+              className="hidden"
+            />
+          </div>
+        ) : (
+          <div className="mb-4">
+            {/* Filter */}
+            <div className="relative mb-3">
+              <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-[15px] text-on-surface-variant/50">search</span>
+              <input
+                value={mediaFilter}
+                onChange={(e) => setMediaFilter(e.target.value)}
+                placeholder="Cerca immagine…"
+                className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-outline-variant bg-surface text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            {mediaLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <span className="material-symbols-outlined animate-spin text-primary">progress_activity</span>
+              </div>
+            ) : mediaFiles.length === 0 ? (
+              <p className="text-sm text-on-surface-variant text-center py-8">
+                Nessuna immagine nella libreria.{" "}
+                <a href="/studio/media" className="text-primary hover:underline">Carica dalla sezione Media →</a>
+              </p>
+            ) : (
+              <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-64 overflow-y-auto pr-1">
+                {mediaFiles
+                  .filter((f) =>
+                    f.name.toLowerCase().includes(mediaFilter.toLowerCase()) ||
+                    f.folder.toLowerCase().includes(mediaFilter.toLowerCase())
+                  )
+                  .map((f) => {
+                    const selected = form.images.some((img) => img.url === f.url)
+                    return (
+                      <button
+                        key={f.url}
+                        type="button"
+                        onClick={() => toggleMediaImage(f)}
+                        title={f.name}
+                        className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${
+                          selected ? "border-primary shadow-md" : "border-transparent hover:border-outline-variant"
+                        }`}
+                      >
+                        <img src={f.url} alt={f.name} className="w-full h-full object-cover" loading="lazy" />
+                        {selected && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-primary/30">
+                            <span className="material-symbols-outlined text-on-primary text-xl">check_circle</span>
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Image grid (always visible) */}
         {form.images.length > 0 && (
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-2">
             {form.images.map((img, idx) => (
               <div
                 key={img.id}
@@ -374,20 +482,14 @@ export function ProductForm({ initial, collections, submitLabel, onSubmit, delet
                   dragOverImgId === img.id ? "border-primary scale-95" : "border-transparent"
                 }`}
               >
-                <img
-                  src={img.url}
-                  alt={img.alt}
-                  className={`w-full h-full object-cover ${img.uploading ? "opacity-50" : ""}`}
-                />
+                <img src={img.url} alt={img.alt} className={`w-full h-full object-cover ${img.uploading ? "opacity-50" : ""}`} />
                 {img.uploading && (
                   <div className="absolute inset-0 flex items-center justify-center bg-surface/60">
                     <span className="material-symbols-outlined text-primary text-2xl animate-spin">progress_activity</span>
                   </div>
                 )}
                 {idx === 0 && !img.uploading && (
-                  <span className="absolute top-1 left-1 bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                    Cover
-                  </span>
+                  <span className="absolute top-1 left-1 bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">Cover</span>
                 )}
                 {!img.uploading && (
                   <button
