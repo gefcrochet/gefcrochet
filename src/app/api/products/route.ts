@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server"
+import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { getSessionFromRequest } from "@/lib/session"
 import { slugify } from "@/lib/utils"
@@ -87,5 +88,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
+  revalidatePath("/shop")
+  revalidatePath("/")
   return Response.json(product, { status: 201 })
 }

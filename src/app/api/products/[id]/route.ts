@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server"
+import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { getSessionFromRequest } from "@/lib/session"
 import { slugify } from "@/lib/utils"
@@ -68,6 +69,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
+  revalidatePath("/shop")
+  revalidatePath("/")
+  revalidatePath(`/shop/${product.slug}`)
   return Response.json(product)
 }
 
@@ -79,6 +83,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   try {
     await prisma.collectionProduct.deleteMany({ where: { productId: id } })
     await prisma.product.delete({ where: { id } })
+    revalidatePath("/shop")
+    revalidatePath("/")
     return new Response(null, { status: 204 })
   } catch (err) {
     console.error("Delete product error:", err)
