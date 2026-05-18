@@ -8,6 +8,8 @@ import { NewsletterForm } from "@/components/NewsletterForm"
 import { HeroSlideshow } from "@/components/HeroSlideshow"
 import { AnnouncementBar } from "@/components/AnnouncementBar"
 
+export const revalidate = 3600
+
 async function getSlides() {
   return prisma.slide.findMany({ where: { isActive: true }, orderBy: { position: "asc" } })
 }
@@ -28,7 +30,7 @@ async function getCollections() {
   return prisma.collection.findMany({
     where: { isActive: true },
     select: { id: true, name: true, slug: true, heroImageUrl: true },
-    orderBy: { createdAt: "desc" },
+    orderBy: { position: "asc" },
   })
 }
 

@@ -7,37 +7,33 @@ import { Footer } from "@/components/Footer"
 import { unstable_cache } from "next/cache"
 
 interface Props {
-  searchParams: Promise<{ category?: string; q?: string }>
+  searchParams: Promise<{ q?: string }>
 }
 
 const getShopData = unstable_cache(
-  async (category?: string, q?: string) => {
-    return Promise.all([
-      prisma.product.findMany({
-        where: {
-          isActive: true,
-          ...(category ? { category: { slug: category } } : {}),
-          ...(q ? { name: { contains: q } } : {}),
-        },
-        select: {
-          id: true, name: true, slug: true, price: true, salePrice: true,
-          description: true,
-          images: { orderBy: { position: "asc" }, take: 1, select: { url: true } },
-          category: { select: { name: true, slug: true } },
-        },
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.category.findMany({ select: { id: true, name: true, slug: true }, orderBy: { name: "asc" } }),
-    ])
+  async (q?: string) => {
+    return prisma.product.findMany({
+      where: {
+        isActive: true,
+        ...(q ? { name: { contains: q } } : {}),
+      },
+      select: {
+        id: true, name: true, slug: true, price: true, salePrice: true,
+        description: true,
+        images: { orderBy: { position: "asc" }, take: 1, select: { url: true } },
+        category: { select: { name: true, slug: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    })
   },
   ["shop-data"],
   { revalidate: 3600 }
 )
 
 export default async function ShopPage({ searchParams }: Props) {
-  const { category, q } = await searchParams
+  const { q } = await searchParams
 
-  const [products, categories] = await getShopData(category, q)
+  const products = await getShopData(q)
 
   return (
     <>
@@ -53,25 +49,6 @@ export default async function ShopPage({ searchParams }: Props) {
               className="px-3 py-2 rounded-lg border border-outline-variant bg-surface text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </form>
-        </div>
-
-        {/* Category filters */}
-        <div className="flex flex-wrap gap-2 mb-8">
-          <Link
-            href="/shop"
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${!category ? "bg-primary text-on-primary" : "border border-outline-variant text-on-surface-variant hover:bg-surface-container"}`}
-          >
-            Tutti
-          </Link>
-          {categories.map((cat) => (
-            <Link
-              key={cat.id}
-              href={`/shop?category=${cat.slug}`}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${category === cat.slug ? "bg-primary text-on-primary" : "border border-outline-variant text-on-surface-variant hover:bg-surface-container"}`}
-            >
-              {cat.name}
-            </Link>
-          ))}
         </div>
 
         {products.length === 0 ? (
@@ -103,7 +80,7 @@ export default async function ShopPage({ searchParams }: Props) {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="p-5 flex flex-col flex-1">
                     <h3 className="font-newsreader text-xl font-normal text-on-surface mb-2 line-clamp-1">{p.name}</h3>
                     {p.description && (
@@ -111,7 +88,7 @@ export default async function ShopPage({ searchParams }: Props) {
                         {p.description}
                       </p>
                     )}
-                    
+
                     <div className="mt-auto">
                       <div className="w-full bg-[#4A5D4E] text-white group-hover:bg-[#3D4D40] transition-colors py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 font-medium text-sm shadow-sm">
                         <span className="material-symbols-outlined text-[18px]">shopping_bag</span>

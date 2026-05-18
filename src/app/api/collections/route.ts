@@ -11,7 +11,7 @@ export async function GET() {
         orderBy: { position: "asc" },
       },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: { position: "asc" },
   })
   return Response.json(collections)
 }
@@ -25,10 +25,13 @@ export async function POST(req: NextRequest) {
 
   if (!name) return Response.json({ error: "Nome obbligatorio" }, { status: 400 })
 
+  const last = await prisma.collection.findFirst({ orderBy: { position: "desc" }, select: { position: true } })
+
   const collection = await prisma.collection.create({
     data: {
       name,
       slug: slugify(name),
+      position: (last?.position ?? -1) + 1,
       description: description ?? null,
       heroImageUrl: heroImageUrl ?? null,
       heroTitle: heroTitle ?? null,

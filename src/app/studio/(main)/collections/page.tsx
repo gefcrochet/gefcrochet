@@ -1,6 +1,21 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core"
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 import { Toggle } from "@/components/studio/Toggle"
 
 interface Collection {
@@ -14,6 +29,79 @@ interface Collection {
 
 const emptyForm = { name: "", description: "" }
 
+function SortableCard({
+  c,
+  onToggle,
+  onEdit,
+  onDelete,
+  deleting,
+}: {
+  c: Collection
+  onToggle: () => void
+  onEdit: () => void
+  onDelete: () => void
+  deleting: boolean
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: c.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="bg-surface-container-low border border-outline-variant rounded-2xl p-5 flex items-start gap-3"
+    >
+      <button
+        className="mt-0.5 flex-shrink-0 cursor-grab active:cursor-grabbing text-on-surface-variant/40 hover:text-on-surface-variant transition-colors touch-none"
+        {...attributes}
+        {...listeners}
+        aria-label="Trascina per riordinare"
+      >
+        <span className="material-symbols-outlined text-[22px]">drag_indicator</span>
+      </button>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex-1 min-w-0 mr-3">
+            <p className="font-medium text-on-surface truncate">{c.name}</p>
+            <p className="text-xs text-on-surface-variant">/{c.slug}</p>
+          </div>
+          <Toggle checked={c.isActive} onChange={onToggle} />
+        </div>
+
+        {c.description && (
+          <p className="text-sm text-on-surface-variant mb-3 leading-relaxed line-clamp-2">{c.description}</p>
+        )}
+
+        <p className="text-xs text-on-surface-variant mb-4">{c.products.length} prodotti</p>
+
+        <div className="flex gap-2">
+          <button
+            onClick={onEdit}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-on-surface-variant border border-outline-variant px-3 py-1.5 rounded-lg hover:bg-surface-container transition-colors"
+          >
+            <span className="material-symbols-outlined text-[14px]">edit</span>
+            Modifica
+          </button>
+          <button
+            onClick={onDelete}
+            disabled={deleting}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-error border border-error/20 px-3 py-1.5 rounded-lg hover:bg-error-container transition-colors disabled:opacity-50"
+          >
+            <span className="material-symbols-outlined text-[14px]">delete</span>
+            {deleting ? "…" : "Elimina"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function CollectionsPage() {
   const [collections, setCollections] = useState<Collection[]>([])
   const [loading, setLoading] = useState(true)
@@ -22,6 +110,8 @@ export default function CollectionsPage() {
   const [editId, setEditId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
   useEffect(() => {
     fetch("/api/collections")
@@ -51,7 +141,7 @@ export default function CollectionsPage() {
       })
       if (res.ok) {
         const created = await res.json()
-        setCollections((prev) => [created, ...prev])
+        setCollections((prev) => [...prev, created])
       }
     }
 
@@ -84,8 +174,24 @@ export default function CollectionsPage() {
     setShowForm(true)
   }
 
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = collections.findIndex((c) => c.id === active.id)
+    const newIndex = collections.findIndex((c) => c.id === over.id)
+    const reordered = arrayMove(collections, oldIndex, newIndex)
+    setCollections(reordered)
+
+    await fetch("/api/collections/reorder", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: reordered.map((c) => c.id) }),
+    })
+  }
+
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6 max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-newsreader text-2xl font-semibold text-on-surface">Collezioni</h1>
@@ -150,46 +256,22 @@ export default function CollectionsPage() {
           <p className="text-sm">Nessuna collezione. Creane una per raggruppare i tuoi prodotti.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {collections.map((c) => (
-            <div key={c.id} className="bg-surface-container-low border border-outline-variant rounded-2xl p-5">
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex-1 min-w-0 mr-3">
-                  <p className="font-medium text-on-surface truncate">{c.name}</p>
-                  <p className="text-xs text-on-surface-variant">/{c.slug}</p>
-                </div>
-                <Toggle
-                  checked={c.isActive}
-                  onChange={() => toggleActive(c.id, c.isActive)}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={collections.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+            <div className="flex flex-col gap-3">
+              {collections.map((c) => (
+                <SortableCard
+                  key={c.id}
+                  c={c}
+                  onToggle={() => toggleActive(c.id, c.isActive)}
+                  onEdit={() => startEdit(c)}
+                  onDelete={() => deleteCollection(c.id)}
+                  deleting={deletingId === c.id}
                 />
-              </div>
-
-              {c.description && (
-                <p className="text-sm text-on-surface-variant mb-3 leading-relaxed line-clamp-2">{c.description}</p>
-              )}
-
-              <p className="text-xs text-on-surface-variant mb-4">{c.products.length} prodotti</p>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => startEdit(c)}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-on-surface-variant border border-outline-variant px-3 py-1.5 rounded-lg hover:bg-surface-container transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[14px]">edit</span>
-                  Modifica
-                </button>
-                <button
-                  onClick={() => deleteCollection(c.id)}
-                  disabled={deletingId === c.id}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-error border border-error/20 px-3 py-1.5 rounded-lg hover:bg-error-container transition-colors disabled:opacity-50"
-                >
-                  <span className="material-symbols-outlined text-[14px]">delete</span>
-                  {deletingId === c.id ? "…" : "Elimina"}
-                </button>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
       )}
     </div>
   )
