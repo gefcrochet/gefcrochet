@@ -205,7 +205,7 @@ export default async function HomePage() {
             <div className="grid md:grid-cols-3 gap-8">
               {[
                 { icon: "handshake", title: "Fatto a mano con amore", desc: "Ogni pezzo richiede ore di lavoro attento. Non usiamo mai macchine — ogni punto è posato a mano, rendendo ogni pezzo unico." },
-                { icon: "eco", title: "Solo fibre naturali", desc: "Scegliamo lino, cotone e lana da fornitori etici certificati. Nessun sintetico, nessuna scorciatoia — solo materiali naturali puri e traspiranti." },
+                { icon: "eco", title: "Materiali scelti con cura", desc: "Ogni filo, cordoncino o fibra viene selezionato personalmente. Che sia cotone, lana o un cordoncino tecnico, scegliamo sempre il meglio disponibile sul mercato." },
                 { icon: "recycling", title: "Packaging sostenibile", desc: "Tutti gli imballaggi sono senza plastica, in materiali riciclati e compostabili. Ci impegniamo a lasciare un'impronta leggera sul pianeta." },
               ].map(({ icon, title, desc }) => (
                 <div key={title} className="text-center p-8">
