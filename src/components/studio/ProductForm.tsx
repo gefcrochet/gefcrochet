@@ -20,6 +20,7 @@ interface ImageItem {
   url: string
   alt: string
   uploading?: boolean
+  error?: boolean
   id: string
 }
 
@@ -107,6 +108,9 @@ export function ProductForm({ initial, collections, submitLabel, onSubmit, delet
     })
     if (!imageFiles.length) return
 
+    const productSlug = form.name.trim() ? slugify(form.name) : "prodotto"
+    const folder = `products/${productSlug}`
+
     const placeholders: ImageItem[] = imageFiles.map((f) => ({
       id: `tmp-${Date.now()}-${Math.random()}`,
       url: URL.createObjectURL(f),
@@ -115,31 +119,39 @@ export function ProductForm({ initial, collections, submitLabel, onSubmit, delet
     }))
     setForm((prev) => ({ ...prev, images: [...prev.images, ...placeholders] }))
 
-    const productSlug = form.name.trim() ? slugify(form.name) : "prodotto"
-    const folder = `products/${productSlug}`
-
-    const uploaded = await Promise.all(
+    const results = await Promise.all(
       imageFiles.map(async (file, i) => {
-        const fd = new FormData()
-        fd.append("file", file)
-        fd.append("folder", folder)
-        fd.append("name", file.name)
-        const res = await fetch("/api/media/upload", { method: "POST", body: fd })
-        if (!res.ok) return null
-        const { url } = await res.json()
-        return { id: placeholders[i].id, url }
+        try {
+          const fd = new FormData()
+          fd.append("file", file)
+          fd.append("folder", folder)
+          fd.append("name", file.name)
+          const res = await fetch("/api/media/upload", { method: "POST", body: fd })
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}))
+            console.error("Upload error:", res.status, body)
+            return { id: placeholders[i].id, url: null }
+          }
+          const { url } = await res.json()
+          return { id: placeholders[i].id, url: url as string }
+        } catch (err) {
+          console.error("Upload fetch error:", err)
+          return { id: placeholders[i].id, url: null }
+        }
       })
     )
 
+    const failed = results.filter((r) => r.url === null).length
+    if (failed > 0) setError(`${failed} immagini non caricate. Controlla la configurazione Cloudinary e riprova.`)
+
     setForm((prev) => ({
       ...prev,
-      images: prev.images
-        .map((img) => {
-          const match = uploaded.find((u) => u?.id === img.id)
-          if (match) return { ...img, url: match.url, uploading: false }
-          return img
-        })
-        .filter((img) => !img.uploading || uploaded.some((u) => u?.id === img.id)),
+      images: prev.images.map((img) => {
+        const result = results.find((r) => r.id === img.id)
+        if (!result) return img
+        if (result.url) return { ...img, url: result.url, uploading: false, error: false }
+        return { ...img, uploading: false, error: true }
+      }),
     }))
   }
 
@@ -474,22 +486,36 @@ export function ProductForm({ initial, collections, submitLabel, onSubmit, delet
             {form.images.map((img, idx) => (
               <div
                 key={img.id}
-                draggable={!img.uploading}
+                draggable={!img.uploading && !img.error}
                 onDragStart={() => onImgDragStart(img.id)}
                 onDragOver={(e) => onImgDragOver(e, img.id)}
                 onDrop={(e) => onImgDrop(e, img.id)}
                 onDragEnd={() => { setDragImgId(null); setDragOverImgId(null) }}
-                className={`relative aspect-square rounded-xl overflow-hidden bg-surface-container border-2 transition-all cursor-grab active:cursor-grabbing ${
-                  dragOverImgId === img.id ? "border-primary scale-95" : "border-transparent"
-                }`}
+                className={`relative aspect-square rounded-xl overflow-hidden bg-surface-container border-2 transition-all ${
+                  img.error
+                    ? "border-error"
+                    : dragOverImgId === img.id
+                    ? "border-primary scale-95"
+                    : "border-transparent"
+                } ${!img.uploading && !img.error ? "cursor-grab active:cursor-grabbing" : ""}`}
               >
-                <img src={img.url} alt={img.alt} className={`w-full h-full object-cover ${img.uploading ? "opacity-50" : ""}`} />
+                <img
+                  src={img.url}
+                  alt={img.alt}
+                  className={`w-full h-full object-cover ${img.uploading || img.error ? "opacity-40" : ""}`}
+                />
                 {img.uploading && (
                   <div className="absolute inset-0 flex items-center justify-center bg-surface/60">
                     <span className="material-symbols-outlined text-primary text-2xl animate-spin">progress_activity</span>
                   </div>
                 )}
-                {idx === 0 && !img.uploading && (
+                {img.error && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-surface/60">
+                    <span className="material-symbols-outlined text-error text-2xl">error</span>
+                    <span className="text-[10px] text-error font-medium px-1 text-center leading-tight">Caricamento fallito</span>
+                  </div>
+                )}
+                {idx === 0 && !img.uploading && !img.error && (
                   <span className="absolute top-1 left-1 bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">Cover</span>
                 )}
                 {!img.uploading && (
