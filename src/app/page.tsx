@@ -107,15 +107,14 @@ export default async function HomePage() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="relative aspect-[4/5] md:aspect-square rounded-[32px] overflow-hidden bg-surface-container-low">
               <Image
-                src="https://images.unsplash.com/photo-1606466986616-e4d0d0877995?auto=format&fit=crop&q=80"
+                src="https://res.cloudinary.com/dwpebo7qz/image/upload/v1778833362/gefcrochet/fettucce-cotone.avif"
                 alt="GeF Crochet Studio"
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
                 className="object-cover"
               />
               <div className="absolute bottom-6 right-6 bg-surface text-center py-4 px-6 rounded-2xl shadow-xl">
-                <p className="font-newsreader text-2xl text-primary mb-0.5">5+ anni</p>
-                <p className="text-xs text-on-surface-variant font-medium">di artigianato</p>
+                <p className="font-newsreader text-xl text-primary tracking-wide">MADE IN ITALY</p>
               </div>
             </div>
             <div className="max-w-md">
