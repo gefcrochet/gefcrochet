@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
 
@@ -16,6 +16,8 @@ interface Slide {
 export function HeroSlideshow({ slides }: { slides: Slide[] }) {
   const active = useMemo(() => slides.filter((s) => s.isActive), [slides])
   const [current, setCurrent] = useState(0)
+  const sectionRef = useRef<HTMLElement>(null)
+  const imgWrappersRef = useRef<(HTMLDivElement | null)[]>([])
 
   const next = useCallback(() => setCurrent((c) => (c + 1) % active.length), [active.length])
   const prev = useCallback(() => setCurrent((c) => (c - 1 + active.length) % active.length), [active.length])
@@ -25,6 +27,17 @@ export function HeroSlideshow({ slides }: { slides: Slide[] }) {
     const t = setInterval(next, 5000)
     return () => clearInterval(t)
   }, [active.length, next])
+
+  useEffect(() => {
+    const onScroll = () => {
+      if (!sectionRef.current) return
+      const scrolled = Math.max(0, -sectionRef.current.getBoundingClientRect().top)
+      const y = Math.min(scrolled * 0.05, 20)
+      imgWrappersRef.current.forEach((el) => { if (el) el.style.transform = `translateY(${y}px)` })
+    }
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
 
   if (active.length === 0) {
     return (
@@ -48,20 +61,26 @@ export function HeroSlideshow({ slides }: { slides: Slide[] }) {
   const slide = active[current]
 
   return (
-    <section className="relative w-full h-[90vh] min-h-[560px] overflow-hidden bg-neutral-900">
+    <section ref={sectionRef} className="relative w-full h-[90vh] min-h-[560px] overflow-hidden bg-neutral-900">
       {active.map((s, i) => (
         <div
           key={s.id}
           className={`absolute inset-0 transition-opacity duration-1000 ${i === current ? "opacity-100" : "opacity-0"}`}
         >
-          <Image
-            src={s.imageUrl}
-            alt={s.caption ?? ""}
-            fill
-            priority={i === 0}
-            sizes="100vw"
-            className="object-cover"
-          />
+          <div
+            ref={(el) => { imgWrappersRef.current[i] = el }}
+            className="absolute left-0 right-0 will-change-transform"
+            style={{ top: -20, bottom: -20 }}
+          >
+            <Image
+              src={s.imageUrl}
+              alt={s.caption ?? ""}
+              fill
+              priority={i === 0}
+              sizes="100vw"
+              className="object-cover"
+            />
+          </div>
         </div>
       ))}
 
