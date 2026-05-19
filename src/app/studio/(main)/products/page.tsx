@@ -8,10 +8,8 @@ import { Toggle } from "@/components/studio/Toggle"
 interface Product {
   id: string
   name: string
-  sku: string | null
   price: number
   salePrice: number | null
-  stock: number
   isActive: boolean
   isFeatured: boolean
   category: { name: string } | null
@@ -80,7 +78,7 @@ export default function ProductsPage() {
           <table className="w-full text-sm">
             <thead className="bg-surface-container border-b border-outline-variant">
               <tr>
-                {["Prodotto", "Collezione", "Prezzo", "Scorte", "Stato", ""].map((h) => (
+                {["Prodotto", "Collezione", "Prezzo", "Stato", ""].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-on-surface-variant uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
@@ -97,21 +95,13 @@ export default function ProductsPage() {
                           <span className="material-symbols-outlined text-[18px] text-on-surface-variant">image</span>
                         </div>
                       )}
-                      <div>
-                        <p className="font-medium text-on-surface">{p.name}</p>
-                        {p.sku && <p className="text-xs text-on-surface-variant">SKU {p.sku}</p>}
-                      </div>
+                      <p className="font-medium text-on-surface">{p.name}</p>
                     </div>
                   </td>
                   <td className="px-4 py-3 text-on-surface-variant">{p.collections[0]?.collection.name ?? p.category?.name ?? "—"}</td>
                   <td className="px-4 py-3">
                     <p className="font-medium text-on-surface">{formatPrice(p.price)}</p>
                     {p.salePrice && <p className="text-xs text-error">{formatPrice(p.salePrice)}</p>}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`font-medium ${p.stock === 0 ? "text-error" : p.stock <= 3 ? "text-amber-600" : "text-on-surface"}`}>
-                      {p.stock}
-                    </span>
                   </td>
                   <td className="px-4 py-3">
                     <Toggle
