@@ -67,7 +67,7 @@ export function ProductDetail({ product }: { product: Product }) {
                   i === imgIndex ? "border-primary" : "border-transparent hover:border-outline-variant"
                 }`}
               >
-                <img src={img.url} alt={img.alt ?? ""} className="w-full h-full object-cover" />
+                <img src={img.url} alt={img.alt || product.name} className="w-full h-full object-cover" />
               </button>
             ))}
           </div>

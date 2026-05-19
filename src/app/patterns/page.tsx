@@ -1,5 +1,17 @@
+import type { Metadata } from "next"
 import { Header } from "@/components/Header"
 import { Footer } from "@/components/Footer"
+
+export const metadata: Metadata = {
+  title: "Cartamodelli",
+  description: "Schemi e cartamodelli gratuiti all'uncinetto firmati GeF Crochet. Borse, top, accessori e amigurumi con istruzioni passo passo.",
+  keywords: ["cartamodelli uncinetto", "schemi uncinetto gratis", "pattern crochet italiano", "schema amigurumi", "schema borsa uncinetto"],
+  openGraph: {
+    title: "Cartamodelli all'uncinetto — GeF Crochet",
+    description: "Schemi e cartamodelli gratuiti all'uncinetto. Borse, top, accessori e amigurumi con istruzioni passo passo.",
+    url: "/patterns",
+  },
+}
 
 const patterns = [
   {

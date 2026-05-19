@@ -14,19 +14,25 @@ interface Props {
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const { tag, q } = await searchParams
   if (tag) {
+    const title = `Prodotti ${tag} fatti a mano`
+    const description = `Scopri i prodotti artigianali GeF Crochet in ${tag}, realizzati a mano con cura e passione.`
     return {
-      title: `Prodotti ${tag} fatti a mano — GeF Crochet`,
-      description: `Scopri i prodotti artigianali GeF Crochet in ${tag}, realizzati a mano con cura e passione.`,
+      title,
+      description,
       keywords: [tag, "crochet", "uncinetto", "fatto a mano", "artigianale"],
+      openGraph: { title, description, url: `/shop?tag=${tag}` },
     }
   }
   if (q) {
-    return { title: `Risultati per "${q}" — GeF Crochet` }
+    return { title: `Risultati per "${q}"` }
   }
+  const title = "Negozio"
+  const description = "Prodotti artigianali all'uncinetto fatti a mano: borse, accessori, amigurumi e decorazioni in cotone, lana e fettuccia."
   return {
-    title: "Negozio — GeF Crochet",
-    description: "Prodotti artigianali fatti a mano: borse, accessori e decorazioni in cotone, lana e fettuccia.",
-    keywords: ["crochet", "uncinetto", "fatto a mano", "artigianale", "borsa crochet", "accessori uncinetto"],
+    title,
+    description,
+    keywords: ["crochet", "uncinetto", "fatto a mano", "artigianale", "borsa crochet", "accessori uncinetto", "amigurumi"],
+    openGraph: { title, description, url: "/shop" },
   }
 }
 
