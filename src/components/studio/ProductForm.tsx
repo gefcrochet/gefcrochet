@@ -31,8 +31,6 @@ export interface ProductFormData {
   description: string
   price: number | ""
   salePrice: number | ""
-  sku: string
-  stock: number | ""
   isActive: boolean
   isFeatured: boolean
   collectionId: string
@@ -341,28 +339,6 @@ export function ProductForm({ initial, collections, submitLabel, onSubmit, delet
             onChange={(e) => set("salePrice", e.target.value === "" ? "" : Number(e.target.value))}
             className={inputCls}
             placeholder="69.00"
-          />
-        </Field>
-      </div>
-
-      {/* SKU e Scorte */}
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="SKU">
-          <input
-            value={form.sku}
-            onChange={(e) => set("sku", e.target.value)}
-            className={inputCls}
-            placeholder="FF-BORSA-001"
-          />
-        </Field>
-        <Field label="Scorte *">
-          <input
-            type="number"
-            min="0"
-            required
-            value={form.stock}
-            onChange={(e) => set("stock", e.target.value === "" ? "" : Number(e.target.value))}
-            className={inputCls}
           />
         </Field>
       </div>
