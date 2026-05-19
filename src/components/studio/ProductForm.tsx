@@ -36,7 +36,7 @@ export interface ProductFormData {
   isActive: boolean
   isFeatured: boolean
   collectionId: string
-  tags: string
+  tags: string[]
   colors: string[]
   images: ImageItem[]
 }
@@ -51,6 +51,65 @@ interface Props {
 
 const inputCls =
   "w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+
+function TagChipInput({ tags, onChange }: { tags: string[]; onChange: (tags: string[]) => void }) {
+  const [input, setInput] = useState("")
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  function addTag(value: string) {
+    const tag = value.trim().toLowerCase()
+    if (tag && !tags.includes(tag)) onChange([...tags, tag])
+    setInput("")
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "," || e.key === "Enter") {
+      e.preventDefault()
+      addTag(input)
+    } else if (e.key === "Backspace" && input === "" && tags.length > 0) {
+      onChange(tags.slice(0, -1))
+    }
+  }
+
+  function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
+    e.preventDefault()
+    const parts = e.clipboardData.getData("text").split(",")
+    const newTags = parts
+      .map((t) => t.trim().toLowerCase())
+      .filter((t) => t && !tags.includes(t))
+    if (newTags.length) onChange([...tags, ...newTags])
+  }
+
+  return (
+    <div
+      className="flex flex-wrap gap-1.5 px-2.5 py-2 rounded-lg border border-outline-variant bg-surface min-h-[42px] cursor-text focus-within:ring-2 focus-within:ring-primary transition-shadow"
+      onClick={() => inputRef.current?.focus()}
+    >
+      {tags.map((tag) => (
+        <span key={tag} className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs font-medium px-2.5 py-1 rounded-full">
+          {tag}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onChange(tags.filter((t) => t !== tag)) }}
+            className="hover:text-error transition-colors"
+          >
+            <span className="material-symbols-outlined text-[12px]">close</span>
+          </button>
+        </span>
+      ))}
+      <input
+        ref={inputRef}
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={() => { if (input.trim()) addTag(input) }}
+        onPaste={handlePaste}
+        placeholder={tags.length === 0 ? "cotone, borsa, estate…" : ""}
+        className="flex-1 min-w-[140px] bg-transparent text-sm text-on-surface outline-none placeholder:text-on-surface-variant/40"
+      />
+    </div>
+  )
+}
 
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return (
@@ -323,13 +382,8 @@ export function ProductForm({ initial, collections, submitLabel, onSubmit, delet
       </Field>
 
       {/* Tag */}
-      <Field label="Tag" hint="Separati da virgola: estate, cotone, naturale">
-        <input
-          value={form.tags}
-          onChange={(e) => set("tags", e.target.value)}
-          className={inputCls}
-          placeholder="estate, cotone, naturale"
-        />
+      <Field label="Tag" hint="Digita e premi Invio o virgola per aggiungere · Backspace per rimuovere l'ultimo">
+        <TagChipInput tags={form.tags} onChange={(tags) => set("tags", tags)} />
       </Field>
 
       {/* Colorazioni */}

@@ -30,7 +30,7 @@ export default function EditProductPage() {
         isActive: product.isActive,
         isFeatured: product.isFeatured,
         collectionId: product.collections?.[0]?.collectionId ?? "",
-        tags: product.tags.map((t: { name: string }) => t.name).join(", "),
+        tags: product.tags.map((t: { name: string }) => t.name),
         colors,
         images: product.images.map((img: { url: string; alt: string | null }, i: number) => ({
           id: `existing-${i}`,
@@ -55,7 +55,7 @@ export default function EditProductPage() {
         isActive: data.isActive,
         isFeatured: data.isFeatured,
         collectionId: data.collectionId || null,
-        tags: data.tags.split(",").map((t) => t.trim()).filter(Boolean),
+        tags: data.tags,
         colors: data.colors,
         images: data.images.filter((i) => !i.uploading).map((i) => ({ url: i.url, alt: i.alt })),
       }),

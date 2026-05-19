@@ -15,7 +15,7 @@ const defaultForm: ProductFormData = {
   isActive: true,
   isFeatured: false,
   collectionId: "",
-  tags: "",
+  tags: [],
   colors: [],
   images: [],
 }
@@ -41,7 +41,7 @@ export default function NewProductPage() {
         isActive: data.isActive,
         isFeatured: data.isFeatured,
         collectionId: data.collectionId || null,
-        tags: data.tags.split(",").map((t) => t.trim()).filter(Boolean),
+        tags: data.tags,
         colors: data.colors,
         images: data.images.filter((i) => !i.uploading).map((i) => ({ url: i.url, alt: i.alt })),
       }),
