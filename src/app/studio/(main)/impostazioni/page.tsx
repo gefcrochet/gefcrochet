@@ -95,17 +95,22 @@ export default function ImpostazioniPage() {
     setGroqSaving(true)
     setGroqError(null)
     setGroqSaved(false)
-    const fd = new FormData()
-    fd.append("groqApiKey", groqKey)
-    const result = await saveGroqSettings(fd)
-    if (result.error) setGroqError(result.error)
-    else {
-      setGroqSaved(true)
-      setGroqKey("")
-      if (groqKey) setGroqHasKey(true)
-      setTimeout(() => setGroqSaved(false), 2500)
+    try {
+      const fd = new FormData()
+      fd.append("groqApiKey", groqKey)
+      const result = await saveGroqSettings(fd)
+      if (result.error) setGroqError(result.error)
+      else {
+        setGroqSaved(true)
+        setGroqKey("")
+        if (groqKey) setGroqHasKey(true)
+        setTimeout(() => setGroqSaved(false), 2500)
+      }
+    } catch (err) {
+      setGroqError((err as Error).message ?? "Errore sconosciuto")
+    } finally {
+      setGroqSaving(false)
     }
-    setGroqSaving(false)
   }
 
   async function handleSaveSmtp(e: React.FormEvent<HTMLFormElement>) {
