@@ -108,7 +108,7 @@ export default async function HomePage() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="relative aspect-[4/5] md:aspect-square rounded-[32px] overflow-hidden bg-surface-container-low">
               <Image
-                src="https://res.cloudinary.com/dwpebo7qz/image/upload/v1778833362/gefcrochet/fettucce-cotone.avif"
+                src="/media/fettucce-cotone.avif"
                 alt="GeF Crochet Studio"
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
