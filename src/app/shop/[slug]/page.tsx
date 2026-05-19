@@ -12,10 +12,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const product = await prisma.product.findUnique({
     where: { slug },
-    select: { name: true, description: true },
+    select: { name: true, description: true, tags: { select: { name: true } } },
   })
   if (!product) return {}
-  return { title: `${product.name} — GeF Crochet`, description: product.description }
+  return {
+    title: `${product.name} — GeF Crochet`,
+    description: product.description,
+    keywords: product.tags.map((t) => t.name),
+  }
 }
 
 export default async function ProductPage({ params }: Props) {

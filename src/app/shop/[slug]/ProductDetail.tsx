@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
+import Link from "next/link"
 import { formatPrice } from "@/lib/utils"
 import { useCart } from "@/components/CartContext"
 
@@ -127,12 +128,13 @@ export function ProductDetail({ product }: { product: Product }) {
         {product.tags.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {product.tags.map((t) => (
-              <span
+              <Link
                 key={t.name}
-                className="px-3 py-1 rounded-full bg-surface-container text-xs text-on-surface-variant"
+                href={`/shop?tag=${encodeURIComponent(t.name)}`}
+                className="px-3 py-1 rounded-full bg-surface-container text-xs text-on-surface-variant hover:bg-primary/10 hover:text-primary transition-colors"
               >
                 {t.name}
-              </span>
+              </Link>
             ))}
           </div>
         )}

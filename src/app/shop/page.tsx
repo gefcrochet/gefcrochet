@@ -1,5 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
+import type { Metadata } from "next"
 import { prisma } from "@/lib/prisma"
 import { formatPrice } from "@/lib/utils"
 import { Header } from "@/components/Header"
@@ -7,15 +8,35 @@ import { Footer } from "@/components/Footer"
 import { unstable_cache } from "next/cache"
 
 interface Props {
-  searchParams: Promise<{ q?: string }>
+  searchParams: Promise<{ q?: string; tag?: string }>
+}
+
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const { tag, q } = await searchParams
+  if (tag) {
+    return {
+      title: `Prodotti ${tag} fatti a mano — GeF Crochet`,
+      description: `Scopri i prodotti artigianali GeF Crochet in ${tag}, realizzati a mano con cura e passione.`,
+      keywords: [tag, "crochet", "uncinetto", "fatto a mano", "artigianale"],
+    }
+  }
+  if (q) {
+    return { title: `Risultati per "${q}" — GeF Crochet` }
+  }
+  return {
+    title: "Negozio — GeF Crochet",
+    description: "Prodotti artigianali fatti a mano: borse, accessori e decorazioni in cotone, lana e fettuccia.",
+    keywords: ["crochet", "uncinetto", "fatto a mano", "artigianale", "borsa crochet", "accessori uncinetto"],
+  }
 }
 
 const getShopData = unstable_cache(
-  async (q?: string) => {
+  async (q?: string, tag?: string) => {
     return prisma.product.findMany({
       where: {
         isActive: true,
         ...(q ? { name: { contains: q } } : {}),
+        ...(tag ? { tags: { some: { name: tag } } } : {}),
       },
       select: {
         id: true, name: true, slug: true, price: true, salePrice: true,
@@ -31,17 +52,30 @@ const getShopData = unstable_cache(
 )
 
 export default async function ShopPage({ searchParams }: Props) {
-  const { q } = await searchParams
+  const { q, tag } = await searchParams
 
-  const products = await getShopData(q)
+  const products = await getShopData(q, tag)
 
   return (
     <>
       <Header />
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <h1 className="font-newsreader text-3xl font-semibold text-on-surface">Negozio</h1>
+          {tag ? (
+            <div>
+              <h1 className="font-newsreader text-3xl font-semibold text-on-surface">
+                Prodotti: <em>{tag}</em>
+              </h1>
+              <Link href="/shop" className="inline-flex items-center gap-1 text-xs text-on-surface-variant hover:text-primary mt-1 transition-colors">
+                <span className="material-symbols-outlined text-[14px]">close</span>
+                Rimuovi filtro
+              </Link>
+            </div>
+          ) : (
+            <h1 className="font-newsreader text-3xl font-semibold text-on-surface">Negozio</h1>
+          )}
           <form className="flex gap-2">
+            {tag && <input type="hidden" name="tag" value={tag} />}
             <input
               name="q"
               defaultValue={q}
