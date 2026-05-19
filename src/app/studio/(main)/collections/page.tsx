@@ -18,6 +18,7 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { Toggle } from "@/components/studio/Toggle"
+import { AiWritingBar } from "@/components/studio/AiWritingBar"
 
 interface Collection {
   id: string
@@ -284,13 +285,19 @@ export default function CollectionsPage() {
 
           <div>
             <label className="block text-xs font-medium text-on-surface-variant mb-1">Descrizione</label>
-            <textarea
+            <AiWritingBar
               value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              placeholder="Breve descrizione della collezione…"
-              rows={3}
-              className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-            />
+              onChange={(v) => setForm((f) => ({ ...f, description: v }))}
+              context="una descrizione per una collezione di prodotti artigianali all'uncinetto"
+            >
+              <textarea
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                placeholder="Breve descrizione della collezione…"
+                rows={3}
+                className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+              />
+            </AiWritingBar>
           </div>
 
           {/* Hero image */}

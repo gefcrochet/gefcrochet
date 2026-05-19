@@ -161,6 +161,7 @@ model SiteSettings {
   smtpUser           String?
   smtpPass           String?
   smtpFrom           String?
+  groqApiKey         String?
 }
 
 model LoginAttempt {

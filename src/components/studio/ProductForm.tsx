@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Toggle } from "@/components/studio/Toggle"
+import { AiWritingBar } from "@/components/studio/AiWritingBar"
 
 const ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif", "image/heic", "image/heif"])
 const ACCEPTED_EXTS = new Set(["jpg", "jpeg", "png", "webp", "avif", "heic", "heif"])
@@ -306,14 +307,20 @@ export function ProductForm({ initial, collections, submitLabel, onSubmit, delet
       </Field>
 
       <Field label="Descrizione *">
-        <textarea
+        <AiWritingBar
           value={form.description}
-          onChange={(e) => set("description", e.target.value)}
-          required
-          rows={4}
-          className={inputCls}
-          placeholder="Descrizione del prodotto…"
-        />
+          onChange={(v) => set("description", v)}
+          context="una descrizione prodotto artigianale all'uncinetto"
+        >
+          <textarea
+            value={form.description}
+            onChange={(e) => set("description", e.target.value)}
+            required
+            rows={4}
+            className={inputCls}
+            placeholder="Descrizione del prodotto…"
+          />
+        </AiWritingBar>
       </Field>
 
       {/* Prezzi */}

@@ -77,6 +77,25 @@ async function requireUser() {
   return user
 }
 
+export async function getGroqSettings(): Promise<{ hasKey: boolean }> {
+  const s = await prisma.siteSettings.findUnique({ where: { id: "default" } })
+  return { hasKey: !!(s?.groqApiKey) }
+}
+
+export async function saveGroqSettings(
+  formData: FormData
+): Promise<{ error?: string; success?: boolean }> {
+  await requireUser()
+  const key = (formData.get("groqApiKey") as string).trim()
+  const existing = await prisma.siteSettings.findUnique({ where: { id: "default" } })
+  await prisma.siteSettings.upsert({
+    where: { id: "default" },
+    update: { groqApiKey: key || existing?.groqApiKey || null },
+    create: { id: "default", groqApiKey: key || null },
+  })
+  return { success: true }
+}
+
 export async function changePassword(
   formData: FormData
 ): Promise<{ error?: string; success?: boolean }> {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { changePassword, getTotpStatus, setupTotp, enableTotp, disableTotp, getSmtpSettings, saveSmtpSettings, testSmtp } from "@/app/actions/settings"
+import { changePassword, getTotpStatus, setupTotp, enableTotp, disableTotp, getSmtpSettings, saveSmtpSettings, testSmtp, getGroqSettings, saveGroqSettings } from "@/app/actions/settings"
 
 type TotpStep = "idle" | "setup" | "verify"
 
@@ -17,6 +17,13 @@ export default function ImpostazioniPage() {
   const [totpError, setTotpError] = useState<string | null>(null)
   const [totpLoading, setTotpLoading] = useState(false)
   const [totpSuccess, setTotpSuccess] = useState<string | null>(null)
+
+  // Groq state
+  const [groqHasKey, setGroqHasKey] = useState(false)
+  const [groqKey, setGroqKey] = useState("")
+  const [groqSaving, setGroqSaving] = useState(false)
+  const [groqSaved, setGroqSaved] = useState(false)
+  const [groqError, setGroqError] = useState<string | null>(null)
 
   // SMTP state
   const [smtp, setSmtp] = useState({ host: "", port: 587, secure: false, user: "", from: "" })
@@ -34,6 +41,7 @@ export default function ImpostazioniPage() {
       setSmtp({ host: s.host, port: s.port, secure: s.secure, user: s.user, from: s.from })
       setSmtpHasPass(s.hasPass)
     })
+    getGroqSettings().then(({ hasKey }) => setGroqHasKey(hasKey))
   }, [])
 
   async function handleChangePassword(e: React.FormEvent<HTMLFormElement>) {
@@ -80,6 +88,24 @@ export default function ImpostazioniPage() {
     setTotpStep("idle")
     setTotpSuccess("Autenticazione a due fattori disattivata.")
     setTotpLoading(false)
+  }
+
+  async function handleSaveGroq(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setGroqSaving(true)
+    setGroqError(null)
+    setGroqSaved(false)
+    const fd = new FormData()
+    fd.append("groqApiKey", groqKey)
+    const result = await saveGroqSettings(fd)
+    if (result.error) setGroqError(result.error)
+    else {
+      setGroqSaved(true)
+      setGroqKey("")
+      if (groqKey) setGroqHasKey(true)
+      setTimeout(() => setGroqSaved(false), 2500)
+    }
+    setGroqSaving(false)
   }
 
   async function handleSaveSmtp(e: React.FormEvent<HTMLFormElement>) {
@@ -255,6 +281,51 @@ export default function ImpostazioniPage() {
             </form>
           </div>
         )}
+      </section>
+
+      {/* Groq AI */}
+      <section className="bg-surface-container-low border border-outline-variant rounded-2xl p-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-[20px]">auto_awesome</span>
+          <h2 className="text-base font-semibold text-on-surface">Intelligenza Artificiale</h2>
+          {groqHasKey && (
+            <span className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full bg-primary-container text-on-primary-container">
+              Configurata
+            </span>
+          )}
+        </div>
+        <p className="text-sm text-on-surface-variant">
+          Chiave API <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Groq</a> per l&apos;assistente AI nella scrittura delle descrizioni prodotto e delle collezioni.
+        </p>
+
+        <form onSubmit={handleSaveGroq} className="space-y-3">
+          <div>
+            <label className="block text-sm font-medium text-on-surface mb-1">
+              Chiave API Groq
+              {groqHasKey && <span className="ml-2 text-xs text-on-surface-variant font-normal">(già configurata — lascia vuoto per non cambiarla)</span>}
+            </label>
+            <input
+              type="password"
+              value={groqKey}
+              onChange={(e) => setGroqKey(e.target.value)}
+              placeholder={groqHasKey ? "••••••••••••••••" : "gsk_…"}
+              autoComplete="new-password"
+              className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary font-mono"
+            />
+          </div>
+
+          {groqError && (
+            <p className="text-sm text-error bg-error-container rounded-lg px-3 py-2">{groqError}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={groqSaving}
+            className="bg-primary text-on-primary px-4 py-2 rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60"
+          >
+            {groqSaving ? "Salvataggio…" : groqSaved ? "Salvato ✓" : "Salva"}
+          </button>
+        </form>
       </section>
 
       {/* SMTP */}
