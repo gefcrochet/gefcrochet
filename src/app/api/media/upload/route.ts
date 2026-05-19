@@ -44,7 +44,8 @@ export async function POST(req: NextRequest) {
   const result = await new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
     cloudinary.uploader.upload_stream(
       {
-        public_id: `${cloudinaryFolder}/${baseName}`,
+        folder: cloudinaryFolder,
+        public_id: baseName,
         resource_type: "image",
         format: "avif",
         overwrite: true,
@@ -56,5 +57,6 @@ export async function POST(req: NextRequest) {
     ).end(uploadBuffer)
   })
 
-  return Response.json({ url: result.secure_url, publicId: result.public_id })
+  const localPath = result.public_id.replace(/^gefcrochet\//, "")
+  return Response.json({ url: `/media/${localPath}.avif`, publicId: result.public_id })
 }

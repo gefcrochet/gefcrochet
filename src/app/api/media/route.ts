@@ -7,6 +7,7 @@ interface CloudinaryResource {
   public_id: string
   folder: string
   bytes: number
+  format: string
   display_name?: string
   filename?: string
 }
@@ -33,8 +34,10 @@ export async function GET(req: NextRequest) {
       const folder = rawFolder.replace(/^gefcrochet\/?/, "") || "/"
       const nameParts = r.public_id.split("/")
       const name = nameParts[nameParts.length - 1]
+      const ext = r.format || "avif"
+      const localPath = r.public_id.replace(/^gefcrochet\//, "")
       return {
-        url: r.secure_url,
+        url: `/media/${localPath}.${ext}`,
         publicId: r.public_id,
         name,
         folder,
