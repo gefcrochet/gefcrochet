@@ -124,15 +124,11 @@ CREATE TABLE IF NOT EXISTS "Order" (
     "subtotalCents" INTEGER NOT NULL,
     "shippingCents" INTEGER NOT NULL DEFAULT 0,
     "totalCents" INTEGER NOT NULL,
-    "stripeSessionId" TEXT,
-    "stripePaymentId" TEXT,
     "notes" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
 );
 CREATE UNIQUE INDEX IF NOT EXISTS "Order_orderNumber_key" ON "Order"("orderNumber");
-CREATE UNIQUE INDEX IF NOT EXISTS "Order_stripeSessionId_key" ON "Order"("stripeSessionId");
-CREATE UNIQUE INDEX IF NOT EXISTS "Order_stripePaymentId_key" ON "Order"("stripePaymentId");
 
 -- Order Items
 CREATE TABLE IF NOT EXISTS "OrderItem" (

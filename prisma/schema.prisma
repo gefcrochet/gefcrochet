@@ -121,9 +121,6 @@ model Order {
   shippingCents   Int      @default(0)
   totalCents      Int
 
-  stripeSessionId String?  @unique
-  stripePaymentId String?  @unique
-
   notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
