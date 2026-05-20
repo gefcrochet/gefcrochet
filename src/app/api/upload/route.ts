@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   if (ext === "heic" || ext === "heif") {
     try {
       const converted = await convert({
-        buffer: Buffer.from(arrayBuffer),
+        buffer: arrayBuffer as ArrayBuffer,
         format: "JPEG",
         quality: 1,
       })
