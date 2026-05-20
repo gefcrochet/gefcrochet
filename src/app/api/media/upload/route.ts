@@ -2,7 +2,6 @@ import { NextRequest } from "next/server"
 import { getSessionFromRequest } from "@/lib/session"
 import { cloudinary } from "@/lib/cloudinary"
 import sharp from "sharp"
-import convert from "heic-convert"
 
 const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "avif", "heic", "heif"]
 const MAX_SIZE = 10 * 1024 * 1024
@@ -30,29 +29,15 @@ export async function POST(req: NextRequest) {
 
   const ext = file.name.split(".").pop()?.toLowerCase() ?? ""
   if (!ALLOWED_EXTENSIONS.includes(ext)) {
-    return Response.json({ error: "Formato non supportato (JPG, PNG, WebP, AVIF)" }, { status: 400 })
+    return Response.json({ error: "Formato non supportato (JPG, PNG, WebP, AVIF, HEIC)" }, { status: 400 })
   }
 
   const baseName = slugify(originalName.replace(/\.[^.]+$/, "")) || `upload-${Date.now()}`
 
-  const arrayBuffer = await file.arrayBuffer()
-  let raw: Buffer
-  if (ext === "heic" || ext === "heif") {
-    try {
-      const converted = await convert({
-        buffer: arrayBuffer as ArrayBuffer,
-        format: "JPEG",
-        quality: 1,
-      })
-      raw = Buffer.from(converted)
-    } catch (err) {
-      console.error("HEIC conversion error:", err)
-      return Response.json({ error: "Errore durante la conversione del file HEIC" }, { status: 500 })
-    }
-  } else {
-    raw = Buffer.from(arrayBuffer)
-  }
-  const uploadBuffer = ext !== "avif" ? await sharp(raw).avif({ quality: 80 }).toBuffer() : raw
+  const raw = Buffer.from(await file.arrayBuffer())
+  const uploadBuffer = ext !== "avif"
+    ? await sharp(raw).avif({ quality: 80 }).toBuffer()
+    : raw
 
   const cloudinaryFolder = folder
     ? `gefcrochet/${folder.replace(/[^a-z0-9_\-\/]/gi, "-").replace(/\/+/g, "/").replace(/^\/+|\/+$/g, "")}`
