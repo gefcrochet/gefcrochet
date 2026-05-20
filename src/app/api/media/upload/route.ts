@@ -59,12 +59,5 @@ export async function POST(req: NextRequest) {
     ).end(uploadBuffer)
   })
 
-  console.log("[upload] Cloudinary result:", { public_id: result.public_id, secure_url: result.secure_url })
-
-  // Derive local URL from secure_url to avoid public_id format edge cases
-  const securePathMatch = result.secure_url.match(/\/image\/upload\/(?:v\d+\/)?(.+)$/)
-  const secureLocalPath = securePathMatch
-    ? securePathMatch[1].replace(/^gefcrochet\//, "")
-    : result.public_id.replace(/^gefcrochet\//, "") + ".avif"
-  return Response.json({ url: `/media/${secureLocalPath}`, publicId: result.public_id })
+  return Response.json({ url: result.secure_url, publicId: result.public_id })
 }
