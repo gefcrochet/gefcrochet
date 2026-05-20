@@ -3,6 +3,7 @@ import { getSessionFromRequest } from "@/lib/session"
 import { writeFile, mkdir } from "fs/promises"
 import path from "path"
 import sharp from "sharp"
+import convert from "heic-convert"
 
 export async function POST(req: NextRequest) {
   const session = await getSessionFromRequest(req)
@@ -39,7 +40,23 @@ export async function POST(req: NextRequest) {
 
   await mkdir(uploadDir, { recursive: true })
 
-  const raw = Buffer.from(new Uint8Array(await file.arrayBuffer()))
+  const arrayBuffer = await file.arrayBuffer()
+  let raw: Buffer
+  if (ext === "heic" || ext === "heif") {
+    try {
+      const converted = await convert({
+        buffer: Buffer.from(arrayBuffer),
+        format: "JPEG",
+        quality: 1,
+      })
+      raw = Buffer.from(converted)
+    } catch (err) {
+      console.error("HEIC conversion error:", err)
+      return Response.json({ error: "Errore durante la conversione del file HEIC" }, { status: 500 })
+    }
+  } else {
+    raw = Buffer.from(arrayBuffer)
+  }
   const finalExt = ext === "avif" ? ext : "avif"
   const finalBuffer = ext !== "avif" ? await sharp(raw).avif({ quality: 80 }).toBuffer() : raw
 

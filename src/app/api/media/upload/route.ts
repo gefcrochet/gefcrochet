@@ -2,6 +2,7 @@ import { NextRequest } from "next/server"
 import { getSessionFromRequest } from "@/lib/session"
 import { cloudinary } from "@/lib/cloudinary"
 import sharp from "sharp"
+import convert from "heic-convert"
 
 const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "avif", "heic", "heif"]
 const MAX_SIZE = 10 * 1024 * 1024
@@ -34,7 +35,23 @@ export async function POST(req: NextRequest) {
 
   const baseName = slugify(originalName.replace(/\.[^.]+$/, "")) || `upload-${Date.now()}`
 
-  const raw = Buffer.from(new Uint8Array(await file.arrayBuffer()))
+  const arrayBuffer = await file.arrayBuffer()
+  let raw: Buffer
+  if (ext === "heic" || ext === "heif") {
+    try {
+      const converted = await convert({
+        buffer: Buffer.from(arrayBuffer),
+        format: "JPEG",
+        quality: 1,
+      })
+      raw = Buffer.from(converted)
+    } catch (err) {
+      console.error("HEIC conversion error:", err)
+      return Response.json({ error: "Errore durante la conversione del file HEIC" }, { status: 500 })
+    }
+  } else {
+    raw = Buffer.from(arrayBuffer)
+  }
   const uploadBuffer = ext !== "avif" ? await sharp(raw).avif({ quality: 80 }).toBuffer() : raw
 
   const cloudinaryFolder = folder

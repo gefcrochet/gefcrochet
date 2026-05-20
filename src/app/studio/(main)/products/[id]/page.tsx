@@ -53,7 +53,9 @@ export default function EditProductPage() {
         collectionId: data.collectionId || null,
         tags: data.tags,
         colors: data.colors,
-        images: data.images.filter((i) => !i.uploading).map((i) => ({ url: i.url, alt: i.alt })),
+        images: data.images
+          .filter((i) => !i.uploading && !i.error && !i.url.startsWith("blob:"))
+          .map((i) => ({ url: i.url, alt: i.alt })),
       }),
     })
     const json = await res.json()
