@@ -2,6 +2,7 @@ import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getSessionFromRequest } from "@/lib/session"
 import { slugify } from "@/lib/utils"
+import { revalidatePath } from "next/cache"
 
 export async function GET() {
   const collections = await prisma.collection.findMany({
@@ -45,5 +46,7 @@ export async function POST(req: NextRequest) {
     },
     include: { products: { include: { product: true }, orderBy: { position: "asc" } } },
   })
+  revalidatePath("/")
+  revalidatePath("/shop")
   return Response.json(collection, { status: 201 })
 }

@@ -16,7 +16,17 @@ async function getSlides() {
 
 async function getFeaturedProducts() {
   return prisma.product.findMany({
-    where: { isFeatured: true, isActive: true },
+    where: {
+      isFeatured: true,
+      isActive: true,
+      collections: {
+        none: {
+          collection: {
+            isActive: false,
+          },
+        },
+      },
+    },
     select: {
       id: true, name: true, slug: true, price: true, salePrice: true,
       category: { select: { name: true } },

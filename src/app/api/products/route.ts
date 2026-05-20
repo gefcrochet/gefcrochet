@@ -29,7 +29,18 @@ export async function GET(req: NextRequest) {
     where: {
       ...(category ? { category: { slug: category } } : {}),
       ...(featured === "true" ? { isFeatured: true } : {}),
-      ...(active !== "false" ? { isActive: true } : {}),
+      ...(active !== "false"
+        ? {
+            isActive: true,
+            collections: {
+              none: {
+                collection: {
+                  isActive: false,
+                },
+              },
+            },
+          }
+        : {}),
       ...(search ? { name: { contains: search } } : {}),
     },
     include: {

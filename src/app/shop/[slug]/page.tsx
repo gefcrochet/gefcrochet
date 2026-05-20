@@ -15,11 +15,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     select: {
       name: true,
       description: true,
+      isActive: true,
       tags: { select: { name: true } },
       images: { orderBy: { position: "asc" }, take: 1, select: { url: true } },
+      collections: {
+        select: {
+          collection: { select: { isActive: true } },
+        },
+      },
     },
   })
-  if (!product) return {}
+  if (!product || !product.isActive || product.collections.some(c => !c.collection.isActive)) return {}
 
   const title = product.name
   const description = product.description ?? undefined
@@ -61,10 +67,15 @@ export default async function ProductPage({ params }: Props) {
       category: { select: { name: true, slug: true } },
       images: { orderBy: { position: "asc" }, select: { url: true, alt: true } },
       tags: { select: { name: true } },
+      collections: {
+        select: {
+          collection: { select: { isActive: true } },
+        },
+      },
     },
   })
 
-  if (!product || !product.isActive) notFound()
+  if (!product || !product.isActive || product.collections.some(c => !c.collection.isActive)) notFound()
 
   const displayPrice = (product.salePrice ?? product.price) / 100
 

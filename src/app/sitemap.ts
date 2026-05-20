@@ -3,7 +3,16 @@ import { prisma } from "@/lib/prisma"
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const products = await prisma.product.findMany({
-    where: { isActive: true },
+    where: {
+      isActive: true,
+      collections: {
+        none: {
+          collection: {
+            isActive: false,
+          },
+        },
+      },
+    },
     select: { slug: true, updatedAt: true },
   })
 

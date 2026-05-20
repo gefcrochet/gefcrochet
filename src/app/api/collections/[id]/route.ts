@@ -2,6 +2,7 @@ import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getSessionFromRequest } from "@/lib/session"
 import { slugify } from "@/lib/utils"
+import { revalidatePath } from "next/cache"
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -43,6 +44,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     },
     include: { products: { include: { product: true }, orderBy: { position: "asc" } } },
   })
+  revalidatePath("/")
+  revalidatePath("/shop")
   return Response.json(collection)
 }
 
@@ -52,5 +55,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
   const { id } = await params
   await prisma.collection.delete({ where: { id } })
+  revalidatePath("/")
+  revalidatePath("/shop")
   return new Response(null, { status: 204 })
 }

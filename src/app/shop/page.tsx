@@ -41,6 +41,13 @@ const getShopData = unstable_cache(
     return prisma.product.findMany({
       where: {
         isActive: true,
+        collections: {
+          none: {
+            collection: {
+              isActive: false,
+            },
+          },
+        },
         ...(q ? { name: { contains: q } } : {}),
         ...(tag ? { tags: { some: { name: tag } } } : {}),
       },
