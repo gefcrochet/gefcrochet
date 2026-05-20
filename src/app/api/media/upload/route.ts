@@ -35,9 +35,9 @@ export async function POST(req: NextRequest) {
   const baseName = slugify(originalName.replace(/\.[^.]+$/, "")) || `upload-${Date.now()}`
 
   const raw = Buffer.from(await file.arrayBuffer())
-  const uploadBuffer = ext !== "avif"
-    ? await sharp(raw).avif({ quality: 80 }).toBuffer()
-    : raw
+  // Send JPEG to Cloudinary — Cloudinary converts to AVIF server-side via format:"avif"
+  // This is more reliable than sending a sharp-generated AVIF buffer directly
+  const uploadBuffer = await sharp(raw).jpeg({ quality: 90 }).toBuffer()
 
   const cloudinaryFolder = folder
     ? `gefcrochet/${folder.replace(/[^a-z0-9_\-\/]/gi, "-").replace(/\/+/g, "/").replace(/^\/+|\/+$/g, "")}`
@@ -59,5 +59,7 @@ export async function POST(req: NextRequest) {
     ).end(uploadBuffer)
   })
 
-  return Response.json({ url: result.secure_url, publicId: result.public_id })
+  // Build /media/ URL from public_id — stays consistent with the Vercel rewrite proxy
+  const localPath = result.public_id.replace(/^gefcrochet\//, "")
+  return Response.json({ url: `/media/${localPath}.avif`, publicId: result.public_id })
 }
