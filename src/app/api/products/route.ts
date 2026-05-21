@@ -25,32 +25,47 @@ export async function GET(req: NextRequest) {
     return Response.json(product)
   }
 
-  const products = await prisma.product.findMany({
-    where: {
-      ...(category ? { category: { slug: category } } : {}),
-      ...(featured === "true" ? { isFeatured: true } : {}),
-      ...(active !== "false"
-        ? {
-            isActive: true,
-            collections: {
-              none: {
-                collection: {
-                  isActive: false,
-                },
-              },
-            },
-          }
-        : {}),
-      ...(search ? { name: { contains: search } } : {}),
-    },
-    include: {
-      category: { select: { name: true, slug: true } },
-      images: { orderBy: { position: "asc" }, select: { url: true, alt: true } },
-      tags: { select: { name: true } },
-      collections: { include: { collection: { select: { name: true, slug: true } } }, orderBy: { position: "asc" } },
-    },
-    orderBy: { createdAt: "desc" },
-  })
+  const page = searchParams.get("page")
+  const limit = Number(searchParams.get("limit") ?? 10)
+  const pageNum = Number(page ?? 1)
+
+  const where = {
+    ...(category ? { category: { slug: category } } : {}),
+    ...(featured === "true" ? { isFeatured: true } : {}),
+    ...(active !== "false"
+      ? {
+          isActive: true,
+          collections: {
+            none: { collection: { isActive: false } },
+          },
+        }
+      : {}),
+    ...(search ? { name: { contains: search } } : {}),
+  }
+
+  const include = {
+    category: { select: { name: true, slug: true } },
+    images: { orderBy: { position: "asc" } as const, select: { url: true, alt: true } },
+    tags: { select: { name: true } },
+    collections: { include: { collection: { select: { name: true, slug: true } } }, orderBy: { position: "asc" } as const },
+  }
+
+  // Paginated response when `page` param is present
+  if (page !== null) {
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        include,
+        orderBy: { createdAt: "desc" },
+        skip: (pageNum - 1) * limit,
+        take: limit,
+      }),
+      prisma.product.count({ where }),
+    ])
+    return Response.json({ products, total, page: pageNum, limit })
+  }
+
+  const products = await prisma.product.findMany({ where, include, orderBy: { createdAt: "desc" } })
   return Response.json(products)
 }
 

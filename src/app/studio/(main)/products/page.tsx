@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { formatPrice } from "@/lib/utils"
 import { Toggle } from "@/components/studio/Toggle"
@@ -17,22 +17,39 @@ interface Product {
   images: { url: string }[]
 }
 
+const PAGE_SIZE = 10
+
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
+  const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const [page, setPage] = useState(1)
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+
+  const load = useCallback(async (p: number, q: string) => {
+    setLoading(true)
+    const params = new URLSearchParams({ active: "false", page: String(p), limit: String(PAGE_SIZE) })
+    if (q) params.set("search", q)
+    const res = await fetch(`/api/products?${params}`)
+    if (res.ok) {
+      const data = await res.json()
+      setProducts(data.products)
+      setTotal(data.total)
+    }
+    setLoading(false)
+  }, [])
 
   useEffect(() => {
-    const load = async () => {
-      setLoading(true)
-      const params = new URLSearchParams({ active: "false" })
-      if (search) params.set("search", search)
-      const res = await fetch(`/api/products?${params}`)
-      if (res.ok) setProducts(await res.json())
-      setLoading(false)
-    }
-    load()
-  }, [search])
+    setPage(1)
+    load(1, search)
+  }, [search, load])
+
+  function goToPage(p: number) {
+    setPage(p)
+    load(p, search)
+  }
 
   async function toggleActive(id: string, isActive: boolean) {
     await fetch(`/api/products/${id}`, {
@@ -48,7 +65,7 @@ export default function ProductsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-newsreader text-2xl font-semibold text-on-surface">Prodotti</h1>
-          <p className="text-sm text-on-surface-variant">{products.length} prodotti</p>
+          <p className="text-sm text-on-surface-variant">{total} prodotti</p>
         </div>
         <Link
           href="/studio/products/new"
@@ -120,6 +137,49 @@ export default function ProductsPage() {
           </table>
         )}
       </div>
+
+      {/* Paginazione */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-sm text-on-surface-variant">
+            Pagina {page} di {totalPages}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => goToPage(page - 1)}
+              disabled={page === 1}
+              className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              aria-label="Pagina precedente"
+            >
+              <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <button
+                key={p}
+                onClick={() => goToPage(p)}
+                className={[
+                  "min-w-[32px] h-8 px-2 rounded-lg text-sm font-medium transition-colors",
+                  p === page
+                    ? "bg-primary text-on-primary"
+                    : "text-on-surface-variant hover:bg-surface-container",
+                ].join(" ")}
+              >
+                {p}
+              </button>
+            ))}
+
+            <button
+              onClick={() => goToPage(page + 1)}
+              disabled={page === totalPages}
+              className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              aria-label="Pagina successiva"
+            >
+              <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
