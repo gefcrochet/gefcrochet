@@ -1,7 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useCart } from "@/components/CartContext"
 import { formatPrice } from "@/lib/utils"
@@ -10,17 +9,33 @@ import { Footer } from "@/components/Footer"
 
 export default function CheckoutPage() {
   const { items, total, clearCart } = useCart()
-  const router = useRouter()
   const shipping = total >= 15000 ? 0 : 600
   const grandTotal = total + shipping
 
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "" })
+  const [captcha, setCaptcha] = useState<{ question: string; token: string } | null>(null)
+  const [captchaAnswer, setCaptchaAnswer] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [orderNumber, setOrderNumber] = useState<number | null>(null)
 
+  // Load captcha challenge on mount
+  useEffect(() => {
+    fetch("/api/captcha")
+      .then((r) => r.json())
+      .then(setCaptcha)
+      .catch(() => {})
+  }, [])
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
+  }
+
+  async function refreshCaptcha() {
+    setCaptchaAnswer("")
+    const r = await fetch("/api/captcha")
+    const data = await r.json()
+    setCaptcha(data)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -42,12 +57,16 @@ export default function CheckoutPage() {
         subtotalCents: total,
         shippingCents: shipping,
         totalCents: grandTotal,
+        captchaToken: captcha?.token ?? "",
+        captchaAnswer: captchaAnswer.trim(),
       }),
     })
 
     const data = await res.json()
     if (!res.ok) {
       setError(data.error ?? "Si è verificato un errore. Riprova.")
+      // Refresh captcha after failed attempt
+      refreshCaptcha()
       setLoading(false)
       return
     }
@@ -181,13 +200,40 @@ export default function CheckoutPage() {
               />
             </div>
 
+            {/* CAPTCHA */}
+            <div className="bg-surface-container-low border border-outline-variant rounded-xl p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <label htmlFor="captcha" className="text-sm font-medium text-on-surface">
+                  Verifica anti-spam: {captcha ? captcha.question : "Caricamento…"}
+                </label>
+                <button
+                  type="button"
+                  onClick={refreshCaptcha}
+                  className="text-xs text-primary hover:underline"
+                  title="Genera nuova domanda"
+                >
+                  Cambia
+                </button>
+              </div>
+              <input
+                id="captcha"
+                type="number"
+                inputMode="numeric"
+                required
+                value={captchaAnswer}
+                onChange={(e) => setCaptchaAnswer(e.target.value)}
+                placeholder="Risposta"
+                className="w-28 px-3 py-2 rounded-lg border border-outline-variant bg-surface text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
             {error && (
               <p className="text-sm text-error bg-error/10 rounded-xl px-4 py-3">{error}</p>
             )}
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !captcha}
               className="w-full bg-primary text-on-primary py-3.5 rounded-2xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed mt-2"
             >
               {loading ? "Invio in corso…" : "Conferma richiesta d'ordine"}
