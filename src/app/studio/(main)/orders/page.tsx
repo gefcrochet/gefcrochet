@@ -155,7 +155,9 @@ export default function OrdersPage() {
               <p className="font-medium text-on-surface">{selected.customerName}</p>
               <p className="text-on-surface-variant">{selected.customerEmail}</p>
               {selected.customerPhone && <p className="text-on-surface-variant">{selected.customerPhone}</p>}
-              <p className="text-on-surface-variant">{selected.shippingLine1}, {selected.shippingPostal} {selected.shippingCity}</p>
+              {selected.shippingLine1 && (
+                <p className="text-on-surface-variant">{selected.shippingLine1}, {selected.shippingPostal} {selected.shippingCity}</p>
+              )}
             </div>
 
             <div>

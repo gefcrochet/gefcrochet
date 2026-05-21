@@ -89,7 +89,7 @@ export default function CartPage() {
                   <span>{formatPrice(total + shipping)}</span>
                 </div>
                 <Link
-                  href="/contatti"
+                  href="/checkout"
                   className="w-full bg-primary text-on-primary py-3 rounded-2xl font-medium hover:bg-primary/90 transition-colors text-center block"
                 >
                   Invia richiesta d&apos;ordine
