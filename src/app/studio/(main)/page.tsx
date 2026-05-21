@@ -1,26 +1,49 @@
 import { formatPrice } from "@/lib/utils"
 import { StatusBadge } from "@/components/StatusBadge"
 import Link from "next/link"
+import { prisma } from "@/lib/prisma"
 
-interface DashboardData {
-  totalOrders: number
-  recentOrders: number
-  totalRevenueCents: number
-  recentRevenueCents: number
-  processingCount: number
-  lowStockProducts: { id: string; name: string; stock: number; sku: string | null }[]
-  recentOrdersList: { id: string; orderNumber: number; customerName: string; totalCents: number; status: string; createdAt: string }[]
-  dailyRevenue: { date: string; cents: number }[]
-}
-
-async function getDashboard(): Promise<DashboardData | null> {
+async function getDashboard() {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"}/api/analytics`, {
-      cache: "no-store",
-      headers: { Cookie: "" },
-    })
-    if (!res.ok) return null
-    return res.json()
+    const now = new Date()
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+
+    const [
+      totalOrders,
+      recentOrders,
+      totalRevenue,
+      recentRevenue,
+      processingCount,
+      lowStockProducts,
+      recentOrdersList,
+    ] = await Promise.all([
+      prisma.order.count({ where: { status: { not: "CANCELLED" } } }),
+      prisma.order.count({ where: { createdAt: { gte: thirtyDaysAgo }, status: { not: "CANCELLED" } } }),
+      prisma.order.aggregate({ _sum: { totalCents: true }, where: { status: { not: "CANCELLED" } } }),
+      prisma.order.aggregate({ _sum: { totalCents: true }, where: { createdAt: { gte: thirtyDaysAgo }, status: { not: "CANCELLED" } } }),
+      prisma.order.count({ where: { status: "PROCESSING" } }),
+      prisma.product.findMany({
+        where: { stock: { lte: 3 }, isActive: true },
+        select: { id: true, name: true, stock: true, sku: true },
+        orderBy: { stock: "asc" },
+        take: 5,
+      }),
+      prisma.order.findMany({
+        take: 5,
+        orderBy: { createdAt: "desc" },
+        select: { id: true, orderNumber: true, customerName: true, totalCents: true, status: true, createdAt: true },
+      }),
+    ])
+
+    return {
+      totalOrders,
+      recentOrders,
+      totalRevenueCents: totalRevenue._sum.totalCents ?? 0,
+      recentRevenueCents: recentRevenue._sum.totalCents ?? 0,
+      processingCount,
+      lowStockProducts,
+      recentOrdersList,
+    }
   } catch {
     return null
   }
