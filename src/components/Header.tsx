@@ -2,19 +2,31 @@
 
 import Link from "next/link"
 import Image from "next/image"
+import { usePathname } from "next/navigation"
 import { useCart } from "./CartContext"
 
 export function Header() {
   const { count } = useCart()
+  const pathname = usePathname()
+
+  function navClass(href: string) {
+    const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href)
+    return [
+      "px-3 py-1.5 rounded-md transition-colors duration-200",
+      isActive
+        ? "text-primary font-semibold"
+        : "text-on-surface-variant hover:text-primary hover:bg-primary/10",
+    ].join(" ")
+  }
 
   return (
     <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur border-b border-outline-variant">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-[100px] grid grid-cols-3 items-center">
         {/* Left: nav links (desktop only) */}
-        <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-on-surface-variant">
-          <Link href="/" className="hover:text-primary transition-colors">Home</Link>
-          <Link href="/shop" className="hover:text-primary transition-colors">Catalogo</Link>
-          <Link href="/contatti" className="hover:text-primary transition-colors">Contatti</Link>
+        <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
+          <Link href="/" className={navClass("/")}>Home</Link>
+          <Link href="/shop" className={navClass("/shop")}>Catalogo</Link>
+          <Link href="/contatti" className={navClass("/contatti")}>Contatti</Link>
         </nav>
 
         {/* Mobile: empty left cell (nav is in bottom bar) */}
