@@ -3,6 +3,7 @@ import "./globals.css"
 import { CartProvider } from "@/components/CartContext"
 import { MobileBottomNav } from "@/components/MobileBottomNav"
 import { CookieConsentProvider } from "@/components/CookieConsent"
+import { WhatsAppButton } from "@/components/WhatsAppButton"
 
 const SITE_URL = "https://gefcrochet.it"
 const SITE_NAME = "GeF Crochet"
@@ -79,6 +80,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               {children}
             </div>
             <MobileBottomNav />
+            <WhatsAppButton />
           </CookieConsentProvider>
         </CartProvider>
       </body>
