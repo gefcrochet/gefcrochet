@@ -1,8 +1,12 @@
 import type { NextConfig } from "next"
+import path from "path"
 
 const cloudName = process.env.CLOUDINARY_CLOUD_NAME
 
 const nextConfig: NextConfig = {
+  // Explicit root prevents ERR_INVALID_ARG_TYPE in Vercel's modifyConfig
+  // when the automatic lock-file discovery picks the wrong parent directory
+  outputFileTracingRoot: path.resolve(__dirname),
   serverExternalPackages: ["sharp"],
   poweredByHeader: false,
   compress: true,
