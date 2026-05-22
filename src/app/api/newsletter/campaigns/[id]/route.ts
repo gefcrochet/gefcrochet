@@ -10,7 +10,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id } = await params
   const campaign = await prisma.newsletterCampaign.findUnique({
     where: { id },
-    include: { products: { include: { product: { select: { id: true, name: true } } } } },
+    include: {
+      products:    { include: { product:     { select: { id: true, name: true } } } },
+      collections: { include: { collection: { select: { id: true, name: true } } } },
+    },
   })
   if (!campaign) return Response.json({ error: "Campagna non trovata" }, { status: 404 })
   return Response.json(campaign)
@@ -22,7 +25,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params
   const body = await req.json()
-  const { subject, htmlContent, topic, scheduledFor, productIds, action } = body
+  const { subject, htmlContent, topic, scheduledFor, productIds, collectionIds, action } = body
 
   const campaign = await prisma.newsletterCampaign.findUnique({ where: { id } })
   if (!campaign) return Response.json({ error: "Non trovata" }, { status: 404 })
@@ -99,7 +102,28 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         data: productIds.map((productId: string) => ({ campaignId: id, productId })),
       })
     }
-    updated = await prisma.newsletterCampaign.findUnique({ where: { id } }) ?? updated
+  }
+
+  // Aggiorna collezioni se specificate
+  if (collectionIds !== undefined) {
+    await prisma.newsletterCampaignCollection.deleteMany({ where: { campaignId: id } })
+    if (collectionIds.length > 0) {
+      await prisma.newsletterCampaignCollection.createMany({
+        data: collectionIds.map((collectionId: string) => ({ campaignId: id, collectionId })),
+      })
+    }
+  }
+
+  // Ricarica con relazioni complete se necessario
+  if (productIds !== undefined || collectionIds !== undefined) {
+    const full = await prisma.newsletterCampaign.findUnique({
+      where: { id },
+      include: {
+        products:    { include: { product:     { select: { id: true, name: true } } } },
+        collections: { include: { collection: { select: { id: true, name: true } } } },
+      },
+    })
+    if (full) return Response.json(full)
   }
 
   return Response.json(updated)

@@ -80,7 +80,8 @@ model Collection {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  products CollectionProduct[]
+  products             CollectionProduct[]
+  newsletterCampaigns  NewsletterCampaignCollection[]
 }
 
 model Slide {
@@ -176,7 +177,8 @@ model NewsletterCampaign {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  products NewsletterCampaignProduct[]
+  products    NewsletterCampaignProduct[]
+  collections NewsletterCampaignCollection[]
 }
 
 model NewsletterCampaignProduct {
@@ -186,6 +188,15 @@ model NewsletterCampaignProduct {
   product    Product            @relation(fields: [productId], references: [id])
 
   @@id([campaignId, productId])
+}
+
+model NewsletterCampaignCollection {
+  campaignId   String
+  collectionId String
+  campaign     NewsletterCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  collection   Collection         @relation(fields: [collectionId], references: [id])
+
+  @@id([campaignId, collectionId])
 }
 
 model LoginAttempt {

@@ -17,6 +17,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           product: { select: { name: true, description: true, price: true, salePrice: true } },
         },
       },
+      collections: {
+        include: {
+          collection: {
+            select: {
+              name: true,
+              description: true,
+              products: {
+                select: { product: { select: { name: true, description: true } } },
+                orderBy: { position: "asc" },
+                take: 5,
+              },
+            },
+          },
+        },
+      },
     },
   })
   if (!campaign) return Response.json({ error: "Campagna non trovata" }, { status: 404 })
@@ -29,12 +44,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     `- ${p.name}: ${p.description}`
   ).join("\n")
 
+  const collectionLines = campaign.collections.map(({ collection: col }) => {
+    const productNames = col.products.map(({ product: p }) => p.name).join(", ")
+    const desc = col.description ? ` — ${col.description}` : ""
+    return `- Collezione "${col.name}"${desc}${productNames ? ` (include: ${productNames})` : ""}`
+  }).join("\n")
+
   const prompt = [
     campaign.topic ? `Tema della newsletter: ${campaign.topic}` : null,
     productLines ? `Prodotti in evidenza:\n${productLines}` : null,
+    collectionLines ? `Collezioni in evidenza:\n${collectionLines}` : null,
   ].filter(Boolean).join("\n\n")
 
-  if (!prompt) return Response.json({ error: "Inserisci un topic o seleziona almeno un prodotto" }, { status: 400 })
+  if (!prompt) return Response.json({ error: "Inserisci un topic o seleziona almeno un prodotto o una collezione" }, { status: 400 })
 
   const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",

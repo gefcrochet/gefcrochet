@@ -12,6 +12,10 @@ interface CampaignProduct {
   product: { id: string; name: string }
 }
 
+interface CampaignCollection {
+  collection: { id: string; name: string }
+}
+
 interface Campaign {
   id: string
   subject: string
@@ -23,9 +27,11 @@ interface Campaign {
   recipientCount: number | null
   createdAt: string
   products: CampaignProduct[]
+  collections: CampaignCollection[]
 }
 
 interface SimpleProduct { id: string; name: string }
+interface SimpleCollection { id: string; name: string }
 
 const STATUS_LABEL: Record<string, string> = {
   DRAFT: "Bozza",
@@ -128,10 +134,12 @@ function CampaignsTab() {
   const [selected, setSelected] = useState<Campaign | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [allProducts, setAllProducts] = useState<SimpleProduct[]>([])
+  const [allCollections, setAllCollections] = useState<SimpleCollection[]>([])
 
   // form state
   const [formTopic, setFormTopic] = useState("")
   const [formProductIds, setFormProductIds] = useState<string[]>([])
+  const [formCollectionIds, setFormCollectionIds] = useState<string[]>([])
   const [formScheduledFor, setFormScheduledFor] = useState("")
   const [creating, setCreating] = useState(false)
 
@@ -147,6 +155,7 @@ function CampaignsTab() {
   const [editScheduledFor, setEditScheduledFor] = useState("")
   const [editTopic, setEditTopic] = useState("")
   const [editProductIds, setEditProductIds] = useState<string[]>([])
+  const [editCollectionIds, setEditCollectionIds] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
 
   const reload = useCallback(async () => {
@@ -163,6 +172,9 @@ function CampaignsTab() {
       const list = Array.isArray(d) ? d : (d.products ?? [])
       setAllProducts(list.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })))
     })
+    fetch("/api/collections").then((r) => r.json()).then((d: { id: string; name: string }[]) => {
+      setAllCollections(d.map((c) => ({ id: c.id, name: c.name })))
+    })
   }, [])
 
   function openCampaign(c: Campaign) {
@@ -170,24 +182,30 @@ function CampaignsTab() {
     setEditSubject(c.subject)
     setEditTopic(c.topic ?? "")
     setEditProductIds(c.products.map((p) => p.product.id))
+    setEditCollectionIds(c.collections.map((col) => col.collection.id))
     setEditScheduledFor(c.scheduledFor ? c.scheduledFor.slice(0, 16) : "")
     setPanelMsg("")
     setShowPreview(false)
   }
 
   async function createCampaign() {
-    if (!formTopic && formProductIds.length === 0) return
+    if (!formTopic && formProductIds.length === 0 && formCollectionIds.length === 0) return
     setCreating(true)
     const r = await fetch("/api/newsletter/campaigns", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ topic: formTopic, productIds: formProductIds, scheduledFor: formScheduledFor || null }),
+      body: JSON.stringify({
+        topic: formTopic,
+        productIds: formProductIds,
+        collectionIds: formCollectionIds,
+        scheduledFor: formScheduledFor || null,
+      }),
     })
     if (r.ok) {
       const c = await r.json()
       setCampaigns((prev) => [c, ...prev])
       setShowForm(false)
-      setFormTopic(""); setFormProductIds([]); setFormScheduledFor("")
+      setFormTopic(""); setFormProductIds([]); setFormCollectionIds([]); setFormScheduledFor("")
       openCampaign(c)
     }
     setCreating(false)
@@ -204,12 +222,20 @@ function CampaignsTab() {
         topic: editTopic,
         scheduledFor: editScheduledFor || null,
         productIds: editProductIds,
+        collectionIds: editCollectionIds,
       }),
     })
     if (r.ok) {
-      const updated: Campaign = { ...selected, subject: editSubject, topic: editTopic || null,
+      const data = await r.json()
+      // Use server response which has full includes, fallback to local merge
+      const updated: Campaign = data.products !== undefined ? data : {
+        ...selected,
+        subject: editSubject,
+        topic: editTopic || null,
         scheduledFor: editScheduledFor || null,
-        products: editProductIds.map((id) => ({ product: { id, name: allProducts.find((p) => p.id === id)?.name ?? id } })) }
+        products: editProductIds.map((id) => ({ product: { id, name: allProducts.find((p) => p.id === id)?.name ?? id } })),
+        collections: editCollectionIds.map((id) => ({ collection: { id, name: allCollections.find((c) => c.id === id)?.name ?? id } })),
+      }
       setCampaigns((prev) => prev.map((c) => c.id === selected.id ? updated : c))
       setSelected(updated)
     }
@@ -264,8 +290,10 @@ function CampaignsTab() {
   }
 
   const isDraft = selected?.status === "DRAFT"
-  const toggleProduct = (id: string) =>
+  const toggleProduct    = (id: string) =>
     setEditProductIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])
+  const toggleCollection = (id: string) =>
+    setEditCollectionIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])
 
   return (
     <div className="flex gap-6 items-start">
@@ -305,13 +333,26 @@ function CampaignsTab() {
               </div>
             </div>
             <div>
+              <label className="block text-xs text-on-surface-variant mb-1">Collezioni in evidenza (opzionale)</label>
+              <div className="max-h-28 overflow-y-auto border border-outline-variant rounded-lg divide-y divide-outline-variant">
+                {allCollections.map((col) => (
+                  <label key={col.id} className="flex items-center gap-2 px-3 py-1.5 hover:bg-surface-container cursor-pointer">
+                    <input type="checkbox" checked={formCollectionIds.includes(col.id)}
+                      onChange={() => setFormCollectionIds((prev) => prev.includes(col.id) ? prev.filter((x) => x !== col.id) : [...prev, col.id])}
+                      className="accent-primary" />
+                    <span className="text-sm text-on-surface">{col.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div>
               <label className="block text-xs text-on-surface-variant mb-1">Data e ora invio</label>
               <input type="datetime-local" value={formScheduledFor} onChange={(e) => setFormScheduledFor(e.target.value)}
                 className="px-3 py-2 rounded-lg border border-outline-variant bg-surface text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary" />
             </div>
             <div className="flex gap-2 justify-end">
               <button onClick={() => setShowForm(false)} className="px-3 py-1.5 text-sm text-on-surface-variant border border-outline-variant rounded-lg hover:bg-surface-container transition-colors">Annulla</button>
-              <button onClick={createCampaign} disabled={creating || (!formTopic && formProductIds.length === 0)}
+              <button onClick={createCampaign} disabled={creating || (!formTopic && formProductIds.length === 0 && formCollectionIds.length === 0)}
                 className="px-3 py-1.5 text-sm bg-primary text-on-primary rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors">
                 {creating ? "…" : "Crea bozza"}
               </button>
@@ -416,6 +457,20 @@ function CampaignsTab() {
             )}
 
             {isDraft && (
+              <div>
+                <label className="block text-xs text-on-surface-variant mb-1">Collezioni</label>
+                <div className="max-h-24 overflow-y-auto border border-outline-variant rounded-lg divide-y divide-outline-variant">
+                  {allCollections.map((col) => (
+                    <label key={col.id} className="flex items-center gap-2 px-3 py-1.5 hover:bg-surface-container cursor-pointer">
+                      <input type="checkbox" checked={editCollectionIds.includes(col.id)} onChange={() => toggleCollection(col.id)} className="accent-primary" />
+                      <span className="text-sm text-on-surface">{col.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {isDraft && (
               <button onClick={saveEdits} disabled={saving}
                 className="w-full py-1.5 text-sm border border-outline-variant text-on-surface-variant rounded-lg hover:bg-surface-container transition-colors disabled:opacity-50">
                 {saving ? "Salvato…" : "Salva modifiche"}
@@ -431,7 +486,7 @@ function CampaignsTab() {
 
           {isDraft && (
             <div className="space-y-2">
-              <button onClick={generate} disabled={generating || (!editTopic && editProductIds.length === 0)}
+              <button onClick={generate} disabled={generating || (!editTopic && editProductIds.length === 0 && editCollectionIds.length === 0)}
                 className="w-full flex items-center justify-center gap-2 bg-primary text-on-primary py-2.5 rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors">
                 <span className="material-symbols-outlined text-[16px]">auto_awesome</span>
                 {generating ? "Generazione in corso…" : "Genera con Groq"}
