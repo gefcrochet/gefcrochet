@@ -54,12 +54,41 @@ function SubscribersTab() {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<"all" | "active">("active")
+  const [addEmail, setAddEmail] = useState("")
+  const [addError, setAddError] = useState("")
+  const [addSuccess, setAddSuccess] = useState("")
+  const [adding, setAdding] = useState(false)
 
   useEffect(() => {
     fetch("/api/newsletter/subscribers").then((r) => r.json()).then((d) => {
       setSubscribers(d); setLoading(false)
     })
   }, [])
+
+  async function addManual(e: React.FormEvent) {
+    e.preventDefault()
+    setAddError(""); setAddSuccess(""); setAdding(true)
+    const r = await fetch("/api/newsletter/subscribers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: addEmail }),
+    })
+    const data = await r.json()
+    if (r.ok) {
+      // upsert: se già esisteva lo riattiva, altrimenti lo crea
+      setSubscribers((prev) => {
+        const exists = prev.find((s) => s.email === data.email)
+        if (exists) return prev.map((s) => s.email === data.email ? { ...s, isActive: true } : s)
+        return [data, ...prev]
+      })
+      setAddEmail("")
+      setAddSuccess(`${data.email} aggiunto con successo`)
+      setTimeout(() => setAddSuccess(""), 3000)
+    } else {
+      setAddError(data.error ?? "Errore durante l'inserimento")
+    }
+    setAdding(false)
+  }
 
   async function unsubscribe(email: string) {
     await fetch("/api/newsletter/subscribers", {
@@ -75,6 +104,33 @@ function SubscribersTab() {
 
   return (
     <div>
+      {/* Aggiungi manualmente */}
+      <div className="mb-6 bg-surface-container-low border border-outline-variant rounded-2xl p-4">
+        <p className="text-sm font-medium text-on-surface mb-3">Aggiungi iscritto manualmente</p>
+        <form onSubmit={addManual} className="flex gap-2 items-start">
+          <div className="flex-1">
+            <input
+              type="email"
+              value={addEmail}
+              onChange={(e) => { setAddEmail(e.target.value); setAddError("") }}
+              placeholder="nome@esempio.it"
+              required
+              className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            {addError && <p className="mt-1 text-xs text-error">{addError}</p>}
+            {addSuccess && <p className="mt-1 text-xs text-primary">{addSuccess}</p>}
+          </div>
+          <button
+            type="submit"
+            disabled={adding || !addEmail}
+            className="inline-flex items-center gap-1.5 bg-primary text-on-primary px-3 py-2 rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors whitespace-nowrap"
+          >
+            <span className="material-symbols-outlined text-[16px]">person_add</span>
+            {adding ? "…" : "Aggiungi"}
+          </button>
+        </form>
+      </div>
+
       <div className="flex items-center justify-between mb-5">
         <p className="text-sm text-on-surface-variant">{activeCount} iscritti attivi · {subscribers.length} totali</p>
         <a
