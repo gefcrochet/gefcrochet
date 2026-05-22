@@ -22,6 +22,6 @@ export async function GET(req: NextRequest) {
 
   return new Response(null, {
     status: 302,
-    headers: { Location: "/?disiscritto=1" },
+    headers: { Location: "/disiscrivi" },
   })
 }

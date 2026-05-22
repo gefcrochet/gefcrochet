@@ -45,10 +45,11 @@ model Product {
   categoryId String?
   category   Category? @relation(fields: [categoryId], references: [id])
 
-  images      ProductImage[]
-  tags        Tag[]              @relation("ProductTags")
-  orderItems  OrderItem[]
-  collections CollectionProduct[]
+  images               ProductImage[]
+  tags                 Tag[]              @relation("ProductTags")
+  orderItems           OrderItem[]
+  collections          CollectionProduct[]
+  newsletterCampaigns  NewsletterCampaignProduct[]
 }
 
 model ProductImage {
@@ -159,6 +160,32 @@ model SiteSettings {
   smtpPass           String?
   smtpFrom           String?
   groqApiKey         String?
+}
+
+model NewsletterCampaign {
+  id             String    @id @default(cuid())
+  subject        String    @default("")
+  previewText    String?
+  htmlContent    String    @default("")
+  topic          String?
+  status         String    @default("DRAFT")
+  scheduledFor   DateTime?
+  approvalToken  String    @unique @default(cuid())
+  sentAt         DateTime?
+  recipientCount Int?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  products NewsletterCampaignProduct[]
+}
+
+model NewsletterCampaignProduct {
+  campaignId String
+  productId  String
+  campaign   NewsletterCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  product    Product            @relation(fields: [productId], references: [id])
+
+  @@id([campaignId, productId])
 }
 
 model LoginAttempt {
