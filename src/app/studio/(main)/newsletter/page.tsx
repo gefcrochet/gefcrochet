@@ -198,6 +198,7 @@ function CampaignsTab() {
   const [formCollectionIds, setFormCollectionIds] = useState<string[]>([])
   const [formScheduledFor, setFormScheduledFor] = useState("")
   const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState("")
 
   // panel state
   const [generating, setGenerating] = useState(false)
@@ -247,22 +248,29 @@ function CampaignsTab() {
   async function createCampaign() {
     if (!formTopic && formProductIds.length === 0 && formCollectionIds.length === 0) return
     setCreating(true)
-    const r = await fetch("/api/newsletter/campaigns", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        topic: formTopic,
-        productIds: formProductIds,
-        collectionIds: formCollectionIds,
-        scheduledFor: formScheduledFor || null,
-      }),
-    })
-    if (r.ok) {
-      const c = await r.json()
-      setCampaigns((prev) => [c, ...prev])
-      setShowForm(false)
-      setFormTopic(""); setFormProductIds([]); setFormCollectionIds([]); setFormScheduledFor("")
-      openCampaign(c)
+    setCreateError("")
+    try {
+      const r = await fetch("/api/newsletter/campaigns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: formTopic,
+          productIds: formProductIds,
+          collectionIds: formCollectionIds,
+          scheduledFor: formScheduledFor || null,
+        }),
+      })
+      const data = await r.json()
+      if (r.ok) {
+        setCampaigns((prev) => [data, ...prev])
+        setShowForm(false)
+        setFormTopic(""); setFormProductIds([]); setFormCollectionIds([]); setFormScheduledFor("")
+        openCampaign(data)
+      } else {
+        setCreateError(data?.error ?? `Errore ${r.status} — riprova`)
+      }
+    } catch (err) {
+      setCreateError(`Errore di rete: ${err instanceof Error ? err.message : String(err)}`)
     }
     setCreating(false)
   }
@@ -413,6 +421,9 @@ function CampaignsTab() {
                 {creating ? "…" : "Crea bozza"}
               </button>
             </div>
+            {createError && (
+              <p className="text-xs text-error bg-error/10 rounded-lg px-3 py-2">{createError}</p>
+            )}
           </div>
         )}
 
