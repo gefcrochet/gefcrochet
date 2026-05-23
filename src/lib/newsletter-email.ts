@@ -1,8 +1,10 @@
 /** Placeholder sostituito per ogni iscritto al momento dell'invio */
 export const UNSUB_PLACEHOLDER = "{{UNSUBSCRIBE_URL}}"
 
-const SITE_URL = "https://gefcrochet.it"
-const LOGO_URL = `${SITE_URL}/logo.png`
+// Risolto a runtime (server-side) → segue la variabile d'ambiente per ogni deploy
+function getSiteUrl(): string {
+  return process.env.NEXT_PUBLIC_BASE_URL ?? "https://gefcrochet.vercel.app"
+}
 
 export interface NewsletterProduct {
   name: string
@@ -31,7 +33,8 @@ export interface NewsletterTemplateData {
 function absUrl(url?: string | null): string | null {
   if (!url) return null
   if (url.startsWith("http")) return url
-  return `${SITE_URL}${url.startsWith("/") ? "" : "/"}${url}`
+  const siteUrl = getSiteUrl()
+  return `${siteUrl}${url.startsWith("/") ? "" : "/"}${url}`
 }
 
 function formatEur(cents?: number | null): string {
@@ -84,7 +87,7 @@ function productCard(p: NewsletterProduct): string {
             </h3>
             ${priceHtml ? `<p style="margin:0 0 12px;">${priceHtml}</p>` : ""}
             <p style="margin:0 0 18px;font-size:14px;line-height:1.7;color:#555751;">${shortDesc}</p>
-            <a href="${SITE_URL}/shop"
+            <a href="${getSiteUrl()}/shop"
                style="display:inline-block;background:#516447;color:#ffffff;
                       font-size:13px;font-weight:600;padding:9px 24px;
                       border-radius:22px;text-decoration:none;letter-spacing:0.2px;">
@@ -107,6 +110,8 @@ function productCard(p: NewsletterProduct): string {
 export function buildNewsletterHtml(data: NewsletterTemplateData): string {
   const { subject, headline, intro, body, closing, products = [], unsubscribeUrl } = data
   const year = new Date().getFullYear()
+  const SITE_URL = getSiteUrl()
+  const LOGO_URL = `${SITE_URL}/logo.png`
 
   const productRowsHtml = products.map(productCard).join("")
   const bodyHtml = textToParagraphs(body)

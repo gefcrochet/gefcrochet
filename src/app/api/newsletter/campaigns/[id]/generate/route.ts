@@ -146,6 +146,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const parsed = parseGroqSections(rawText)
 
+  // ── Converti URL immagine in JPEG Cloudinary (Gmail non supporta AVIF) ───
+
+  function buildEmailImageUrl(url: string | null | undefined): string | null {
+    if (!url) return null
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME
+    if (cloudName && url.startsWith("/media/")) {
+      // /media/folder/image.avif → Cloudinary JPEG con trasformazioni
+      const path = url.replace(/^\/media\//, "").replace(/\.[^.]+$/, "")
+      return `https://res.cloudinary.com/${cloudName}/image/upload/f_jpg,c_fill,w_600/gefcrochet/${path}`
+    }
+    if (url.includes("res.cloudinary.com") && !url.includes("f_jpg")) {
+      return url.replace("/image/upload/", "/image/upload/f_jpg,c_fill,w_600/")
+    }
+    if (url.startsWith("http")) return url
+    const siteUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://gefcrochet.vercel.app"
+    return `${siteUrl}${url.startsWith("/") ? "" : "/"}${url}`
+  }
+
   // ── Lista prodotti con immagine (per il template) ─────────────────────────
 
   const templateProducts: NewsletterProduct[] = [
@@ -153,7 +171,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     ...campaign.products.map(({ product: p }) => ({
       name: p.name,
       description: p.description,
-      imageUrl: p.images[0]?.url ?? null,
+      imageUrl: buildEmailImageUrl(p.images[0]?.url),
       price: p.price,
       salePrice: p.salePrice ?? null,
     })),
@@ -167,7 +185,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         .map(({ product: p }) => ({
           name: p.name,
           description: p.description,
-          imageUrl: p.images[0]?.url ?? null,
+          imageUrl: buildEmailImageUrl(p.images[0]?.url),
           price: null,
           salePrice: null,
         }))
