@@ -33,7 +33,7 @@ export function Footer() {
       </div>
       <div className="border-t border-outline-variant px-4 sm:px-6 py-4">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-on-surface-variant">
-          <span>© {new Date().getFullYear()}, GeF Crochet — Powered by <a href="https://ganaweb.it" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">GanaWeb</a></span>
+          <span>© {new Date().getFullYear()}, GeF Crochet — Powered by <Link href="/ganaweb" className="hover:text-primary transition-colors">GanaWeb</Link></span>
           <div className="flex items-center gap-4">
             <Link href="/privacy" className="hover:text-primary transition-colors">Informativa sulla privacy</Link>
             <button onClick={openBanner} className="hover:text-primary transition-colors cursor-pointer">Preferenze cookie</button>
