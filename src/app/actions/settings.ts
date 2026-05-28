@@ -29,6 +29,12 @@ export async function saveSmtpSettings(
   const pass = (formData.get("smtpPass") as string).trim()
   const from = (formData.get("smtpFrom") as string).trim()
 
+  // Validazione coerenza porta ↔ sicurezza (compatibilità Brevo)
+  if (port === 587 && secure)
+    return { error: "Configurazione non valida: con porta 587 devi usare STARTTLS, non SSL/TLS implicito." }
+  if (port === 465 && !secure)
+    return { error: "Configurazione non valida: con porta 465 devi usare SSL/TLS implicito." }
+
   const existing = await prisma.siteSettings.findUnique({ where: { id: "default" } })
 
   await prisma.siteSettings.upsert({

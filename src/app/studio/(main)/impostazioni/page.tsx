@@ -113,10 +113,35 @@ export default function ImpostazioniPage() {
     }
   }
 
+  /** Ricava la modalità sicurezza dalla porta e dal flag secure */
+  function smtpSecurityMode(): "STARTTLS" | "SMTPS" | "AUTO" {
+    if (smtp.port === 587 && !smtp.secure) return "STARTTLS"
+    if (smtp.port === 465 && smtp.secure) return "SMTPS"
+    return "AUTO"
+  }
+
+  /** Aggiorna porta + secure quando l'utente sceglie una modalità */
+  function handleSmtpSecurityChange(mode: string) {
+    if (mode === "STARTTLS") setSmtp((s) => ({ ...s, port: 587, secure: false }))
+    else if (mode === "SMTPS") setSmtp((s) => ({ ...s, port: 465, secure: true }))
+    // AUTO: lascia porta e secure invariati
+  }
+
   async function handleSaveSmtp(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setSmtpSaving(true)
     setSmtpError(null)
+
+    // Validazione frontend coerenza porta ↔ sicurezza
+    if (smtp.port === 587 && smtp.secure) {
+      setSmtpError("Configurazione non valida: con porta 587 devi usare STARTTLS, non SSL/TLS implicito.")
+      return
+    }
+    if (smtp.port === 465 && !smtp.secure) {
+      setSmtpError("Configurazione non valida: con porta 465 devi usare SSL/TLS implicito.")
+      return
+    }
+
+    setSmtpSaving(true)
     setSmtpSaved(false)
     const fd = new FormData()
     fd.append("smtpHost", smtp.host)
@@ -344,13 +369,14 @@ export default function ImpostazioniPage() {
         </p>
 
         <form onSubmit={handleSaveSmtp} className="space-y-4">
+          {/* Host + Porta */}
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2 sm:col-span-1">
               <label className="block text-sm font-medium text-on-surface mb-1">Host SMTP</label>
               <input
                 value={smtp.host}
                 onChange={(e) => setSmtp((s) => ({ ...s, host: e.target.value }))}
-                placeholder="smtp.gmail.com"
+                placeholder="smtp-relay.brevo.com"
                 className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
@@ -359,62 +385,81 @@ export default function ImpostazioniPage() {
               <input
                 type="number"
                 value={smtp.port}
-                onChange={(e) => setSmtp((s) => ({ ...s, port: parseInt(e.target.value) || 587 }))}
+                onChange={(e) => {
+                  const p = parseInt(e.target.value) || 587
+                  // Sincronizza automaticamente secure in base alla porta
+                  setSmtp((s) => ({
+                    ...s,
+                    port: p,
+                    ...(p === 587 ? { secure: false } : p === 465 ? { secure: true } : {}),
+                  }))
+                }}
                 placeholder="587"
                 className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
           </div>
 
+          {/* Sicurezza connessione */}
           <div>
-            <label className="block text-sm font-medium text-on-surface mb-1">Utente (email mittente)</label>
+            <label className="block text-sm font-medium text-on-surface mb-1">Sicurezza connessione</label>
+            <select
+              value={smtpSecurityMode()}
+              onChange={(e) => handleSmtpSecurityChange(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="AUTO">Auto (porta personalizzata)</option>
+              <option value="STARTTLS">STARTTLS — porta 587 (consigliato Brevo)</option>
+              <option value="SMTPS">SSL/TLS implicito — porta 465</option>
+            </select>
+            <p className="mt-1.5 text-xs text-on-surface-variant">
+              Brevo: usa <strong>STARTTLS</strong> con porta 587, oppure <strong>SSL/TLS implicito</strong> con porta 465.
+            </p>
+          </div>
+
+          {/* Username SMTP */}
+          <div>
+            <label className="block text-sm font-medium text-on-surface mb-1">
+              Username SMTP
+              <span className="ml-2 text-xs text-on-surface-variant font-normal">(su Brevo è la tua email di accesso)</span>
+            </label>
             <input
               type="email"
               value={smtp.user}
               onChange={(e) => setSmtp((s) => ({ ...s, user: e.target.value }))}
-              placeholder="info@gefcrochet.it"
+              placeholder="tuo@account-brevo.com"
               className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
+          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-on-surface mb-1">
-              Password
+              Password SMTP
               {smtpHasPass && <span className="ml-2 text-xs text-on-surface-variant font-normal">(già configurata — lascia vuoto per non cambiarla)</span>}
             </label>
             <input
               type="password"
               value={smtpPass}
               onChange={(e) => setSmtpPass(e.target.value)}
-              placeholder={smtpHasPass ? "••••••••" : "Password SMTP"}
+              placeholder={smtpHasPass ? "••••••••" : "Chiave SMTP Brevo"}
               autoComplete="new-password"
               className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
+          {/* Indirizzo mittente */}
           <div>
-            <label className="block text-sm font-medium text-on-surface mb-1">Indirizzo mittente (from)</label>
+            <label className="block text-sm font-medium text-on-surface mb-1">
+              Indirizzo mittente (From)
+              <span className="ml-2 text-xs text-on-surface-variant font-normal">(può differire dall&apos;username SMTP)</span>
+            </label>
             <input
               value={smtp.from}
               onChange={(e) => setSmtp((s) => ({ ...s, from: e.target.value }))}
               placeholder="no-reply@gefcrochet.it"
               className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <label className="inline-flex items-center gap-2.5 cursor-pointer select-none">
-              <button
-                type="button"
-                role="switch"
-                aria-checked={smtp.secure}
-                onClick={() => setSmtp((s) => ({ ...s, secure: !s.secure }))}
-                className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${smtp.secure ? "bg-green-500" : "bg-gray-300"}`}
-              >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${smtp.secure ? "translate-x-[18px]" : "translate-x-0.5"}`} />
-              </button>
-              <span className="text-sm text-on-surface">SSL/TLS (porta 465)</span>
-            </label>
           </div>
 
           {smtpError && (

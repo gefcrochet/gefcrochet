@@ -30,6 +30,11 @@ export async function sendEmail({ to, subject, html }: { to: string; subject: st
     return
   }
 
+  // Porta 465 → SSL/TLS implicito (secure=true); porta 587 → STARTTLS (secure=false).
+  // Sovrascrive il valore salvato in DB per garantire la configurazione corretta con Brevo.
+  if (port === 465) secure = true
+  else if (port === 587) secure = false
+
   const transporter = nodemailer.createTransport({
     host,
     port,
