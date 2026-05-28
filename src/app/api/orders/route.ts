@@ -1,25 +1,9 @@
 import { NextRequest } from "next/server"
-import { createHmac } from "crypto"
 import { prisma } from "@/lib/prisma"
 import { getSessionFromRequest } from "@/lib/session"
 import { sendEmail } from "@/lib/email"
 import { formatPrice } from "@/lib/utils"
-
-const CAPTCHA_SECRET = process.env.SESSION_SECRET ?? "gefcrochet-captcha-fallback"
-
-function verifyCaptcha(token: string, userAnswer: string): boolean {
-  const num = parseInt(userAnswer.trim(), 10)
-  if (isNaN(num)) return false
-  const now = Math.floor(Date.now() / (15 * 60 * 1000))
-  for (const w of [now, now - 1]) {
-    const expected = createHmac("sha256", CAPTCHA_SECRET)
-      .update(`${num}:${w}`)
-      .digest("hex")
-      .slice(0, 24)
-    if (expected === token) return true
-  }
-  return false
-}
+import { verifyTurnstile } from "@/lib/turnstile"
 
 async function generateGroqMessage(
   apiKey: string,
@@ -309,7 +293,7 @@ export async function POST(req: NextRequest) {
   const {
     firstName, lastName, email, phone,
     items, subtotalCents, shippingCents, totalCents,
-    captchaToken, captchaAnswer,
+    turnstileToken,
   } = body
 
   if (!firstName || !lastName || !email || !Array.isArray(items) || items.length === 0) {
@@ -321,8 +305,9 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "Indirizzo email non valido" }, { status: 400 })
   }
 
-  if (!captchaToken || !captchaAnswer || !verifyCaptcha(captchaToken, captchaAnswer)) {
-    return Response.json({ error: "Verifica CAPTCHA non riuscita. Riprova." }, { status: 400 })
+  const captchaOk = await verifyTurnstile(turnstileToken ?? "")
+  if (!captchaOk) {
+    return Response.json({ error: "Verifica anti-spam non superata. Riprova." }, { status: 400 })
   }
 
   const lastOrder = await prisma.order.findFirst({ orderBy: { orderNumber: "desc" } })

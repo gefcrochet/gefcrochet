@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useCallback } from "react"
 import Link from "next/link"
 import { useCart } from "@/components/CartContext"
 import { formatPrice } from "@/lib/utils"
 import { Header } from "@/components/Header"
 import { Footer } from "@/components/Footer"
+import { TurnstileWidget } from "@/components/TurnstileWidget"
 
 export default function CheckoutPage() {
   const { items, total, clearCart } = useCart()
@@ -13,29 +14,17 @@ export default function CheckoutPage() {
   const grandTotal = total + shipping
 
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "" })
-  const [captcha, setCaptcha] = useState<{ question: string; token: string } | null>(null)
-  const [captchaAnswer, setCaptchaAnswer] = useState("")
+  const [turnstileToken, setTurnstileToken] = useState("")
+  const [turnstileKey, setTurnstileKey] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [orderNumber, setOrderNumber] = useState<number | null>(null)
 
-  // Load captcha challenge on mount
-  useEffect(() => {
-    fetch("/api/captcha")
-      .then((r) => r.json())
-      .then(setCaptcha)
-      .catch(() => {})
-  }, [])
+  const handleTurnstileVerify = useCallback((token: string) => setTurnstileToken(token), [])
+  const handleTurnstileExpire = useCallback(() => setTurnstileToken(""), [])
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
-  }
-
-  async function refreshCaptcha() {
-    setCaptchaAnswer("")
-    const r = await fetch("/api/captcha")
-    const data = await r.json()
-    setCaptcha(data)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -57,16 +46,16 @@ export default function CheckoutPage() {
         subtotalCents: total,
         shippingCents: shipping,
         totalCents: grandTotal,
-        captchaToken: captcha?.token ?? "",
-        captchaAnswer: captchaAnswer.trim(),
+        turnstileToken,
       }),
     })
 
     const data = await res.json()
     if (!res.ok) {
       setError(data.error ?? "Si è verificato un errore. Riprova.")
-      // Refresh captcha after failed attempt
-      refreshCaptcha()
+      // Reset Turnstile dopo un tentativo fallito
+      setTurnstileToken("")
+      setTurnstileKey((k) => k + 1)
       setLoading(false)
       return
     }
@@ -200,30 +189,12 @@ export default function CheckoutPage() {
               />
             </div>
 
-            {/* CAPTCHA */}
-            <div className="bg-surface-container-low border border-outline-variant rounded-xl p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <label htmlFor="captcha" className="text-sm font-medium text-on-surface">
-                  Verifica anti-spam: {captcha ? captcha.question : "Caricamento…"}
-                </label>
-                <button
-                  type="button"
-                  onClick={refreshCaptcha}
-                  className="text-xs text-primary hover:underline"
-                  title="Genera nuova domanda"
-                >
-                  Cambia
-                </button>
-              </div>
-              <input
-                id="captcha"
-                type="number"
-                inputMode="numeric"
-                required
-                value={captchaAnswer}
-                onChange={(e) => setCaptchaAnswer(e.target.value)}
-                placeholder="Risposta"
-                className="w-28 px-3 py-2 rounded-lg border border-outline-variant bg-surface text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            {/* Cloudflare Turnstile */}
+            <div className="rounded-xl overflow-hidden">
+              <TurnstileWidget
+                key={turnstileKey}
+                onVerify={handleTurnstileVerify}
+                onExpire={handleTurnstileExpire}
               />
             </div>
 
@@ -233,7 +204,7 @@ export default function CheckoutPage() {
 
             <button
               type="submit"
-              disabled={loading || !captcha}
+              disabled={loading || !turnstileToken}
               className="w-full bg-primary text-on-primary py-3.5 rounded-2xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed mt-2"
             >
               {loading ? "Invio in corso…" : "Conferma richiesta d'ordine"}
