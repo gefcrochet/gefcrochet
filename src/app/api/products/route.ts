@@ -6,23 +6,15 @@ import { slugify } from "@/lib/utils"
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
-  const slug = searchParams.get("slug")
   const category = searchParams.get("category")
   const featured = searchParams.get("featured")
   const active = searchParams.get("active")
   const search = searchParams.get("search")
 
-  if (slug) {
-    const product = await prisma.product.findUnique({
-      where: { slug },
-      include: {
-        category: { select: { name: true, slug: true } },
-        images: { orderBy: { position: "asc" }, select: { url: true, alt: true } },
-        tags: { select: { name: true } },
-      },
-    })
-    if (!product) return Response.json(null, { status: 404 })
-    return Response.json(product)
+  // I prodotti disattivati sono visibili solo dallo Studio
+  if (active === "false") {
+    const session = await getSessionFromRequest(req)
+    if (!session) return Response.json({ error: "Non autorizzato" }, { status: 401 })
   }
 
   const page = searchParams.get("page")

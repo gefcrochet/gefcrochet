@@ -1,6 +1,6 @@
 import { SignJWT, jwtVerify } from "jose"
 import { cookies } from "next/headers"
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest } from "next/server"
 
 const COOKIE_NAME = "ff-studio"
 const TEMP_TOKEN_EXPIRY = "5m"
@@ -54,14 +54,6 @@ export async function getSessionFromRequest(req: NextRequest): Promise<{ userId:
   } catch {
     return null
   }
-}
-
-export function requireAuthResponse(req: NextRequest): NextResponse | null {
-  const token = req.cookies.get(COOKIE_NAME)?.value
-  if (!token) {
-    return NextResponse.redirect(new URL("/studio/login", req.url))
-  }
-  return null
 }
 
 export async function createTempToken(userId: string): Promise<string> {

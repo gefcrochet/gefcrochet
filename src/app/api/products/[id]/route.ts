@@ -4,7 +4,11 @@ import { prisma } from "@/lib/prisma"
 import { getSessionFromRequest } from "@/lib/session"
 import { slugify } from "@/lib/utils"
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+// Usata solo dall'editor prodotti dello Studio: espone anche le bozze, quindi richiede la sessione
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getSessionFromRequest(req)
+  if (!session) return Response.json({ error: "Non autorizzato" }, { status: 401 })
+
   const { id } = await params
   const product = await prisma.product.findUnique({
     where: { id },

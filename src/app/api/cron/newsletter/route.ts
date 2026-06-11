@@ -4,7 +4,9 @@ import { sendEmail } from "@/lib/email"
 import { personalizeHtml } from "@/lib/newsletter-email"
 
 export async function GET(req: NextRequest) {
-  const secret = req.headers.get("x-cron-secret") || req.nextUrl.searchParams.get("secret")
+  // Vercel Cron invia "Authorization: Bearer <CRON_SECRET>"; gli altri canali restano supportati
+  const bearer = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "")
+  const secret = bearer || req.headers.get("x-cron-secret") || req.nextUrl.searchParams.get("secret")
   const expected = process.env.CRON_SECRET
   if (!expected || secret !== expected) {
     return Response.json({ error: "Non autorizzato" }, { status: 401 })
@@ -41,7 +43,8 @@ export async function GET(req: NextRequest) {
 
     for (const subscriber of subscribers) {
       try {
-        const siteUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://gefcrochet.it"
+        // Stesso fallback degli altri moduli newsletter: gefcrochet.it non è ancora collegato
+        const siteUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://gefcrochet.vercel.app"
         const unsubUrl = `${siteUrl}/api/newsletter/unsubscribe?token=${subscriber.unsubscribeToken}`
         const html = personalizeHtml(campaign.htmlContent, unsubUrl)
 

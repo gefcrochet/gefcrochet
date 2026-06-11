@@ -5,6 +5,17 @@ import { sendEmail } from "@/lib/email"
 import { formatPrice } from "@/lib/utils"
 import { verifyTurnstile } from "@/lib/turnstile"
 
+const SHIPPING_FREE_THRESHOLD_CENTS = 15000
+const SHIPPING_COST_CENTS = 600
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+}
+
 async function generateGroqMessage(
   apiKey: string,
   firstName: string,
@@ -289,14 +300,27 @@ function buildStudioEmailHtml({
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const {
-    firstName, lastName, email, phone,
-    items, subtotalCents, shippingCents, totalCents,
-    turnstileToken,
-  } = body
+  let body: {
+    firstName?: string
+    lastName?: string
+    email?: string
+    phone?: string
+    items?: { productId?: unknown; quantity?: unknown }[]
+    turnstileToken?: string
+  }
+  try {
+    body = await req.json()
+  } catch {
+    return Response.json({ error: "Richiesta non valida" }, { status: 400 })
+  }
 
-  if (!firstName || !lastName || !email || !Array.isArray(items) || items.length === 0) {
+  const firstName = typeof body.firstName === "string" ? body.firstName.trim().slice(0, 100) : ""
+  const lastName = typeof body.lastName === "string" ? body.lastName.trim().slice(0, 100) : ""
+  const email = typeof body.email === "string" ? body.email.trim().slice(0, 254) : ""
+  const phone = typeof body.phone === "string" ? body.phone.trim().slice(0, 30) : ""
+  const rawItems = body.items
+
+  if (!firstName || !lastName || !email || !Array.isArray(rawItems) || rawItems.length === 0 || rawItems.length > 50) {
     return Response.json({ error: "Dati mancanti o carrello vuoto" }, { status: 400 })
   }
 
@@ -305,10 +329,39 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "Indirizzo email non valido" }, { status: 400 })
   }
 
-  const captchaOk = await verifyTurnstile(turnstileToken ?? "")
+  const captchaOk = await verifyTurnstile(body.turnstileToken ?? "")
   if (!captchaOk) {
     return Response.json({ error: "Verifica anti-spam non superata. Riprova." }, { status: 400 })
   }
+
+  // Quantità per prodotto, deduplicate e limitate a 1-99
+  const quantities = new Map<string, number>()
+  for (const item of rawItems) {
+    if (typeof item?.productId !== "string" || !item.productId) {
+      return Response.json({ error: "Carrello non valido" }, { status: 400 })
+    }
+    const qty = Math.min(Math.max(Math.trunc(Number(item.quantity)) || 1, 1), 99)
+    quantities.set(item.productId, Math.min((quantities.get(item.productId) ?? 0) + qty, 99))
+  }
+
+  // Prezzi e nomi sempre dal database: i valori inviati dal client non sono attendibili
+  const products = await prisma.product.findMany({
+    where: { id: { in: [...quantities.keys()] }, isActive: true },
+    select: { id: true, name: true, description: true, price: true, salePrice: true },
+  })
+  if (products.length !== quantities.size) {
+    return Response.json({ error: "Alcuni prodotti non sono più disponibili. Aggiorna il carrello." }, { status: 400 })
+  }
+
+  const orderItems = products.map((p) => ({
+    productId: p.id,
+    name: p.name,
+    price: p.salePrice ?? p.price,
+    quantity: quantities.get(p.id)!,
+  }))
+  const subtotalCents = orderItems.reduce((s, i) => s + i.price * i.quantity, 0)
+  const shippingCents = subtotalCents >= SHIPPING_FREE_THRESHOLD_CENTS ? 0 : SHIPPING_COST_CENTS
+  const totalCents = subtotalCents + shippingCents
 
   const lastOrder = await prisma.order.findFirst({ orderBy: { orderNumber: "desc" } })
   const orderNumber = (lastOrder?.orderNumber ?? 0) + 1
@@ -325,11 +378,11 @@ export async function POST(req: NextRequest) {
       shippingCity: "",
       shippingPostal: "",
       shippingCountry: "IT",
-      subtotalCents: subtotalCents ?? 0,
-      shippingCents: shippingCents ?? 0,
-      totalCents: totalCents ?? 0,
+      subtotalCents,
+      shippingCents,
+      totalCents,
       items: {
-        create: items.map((item: { productId: string; name: string; price: number; quantity: number }) => ({
+        create: orderItems.map((item) => ({
           productId: item.productId,
           productName: item.name,
           quantity: item.quantity,
@@ -340,21 +393,12 @@ export async function POST(req: NextRequest) {
     include: { items: true },
   })
 
-  // Fetch product descriptions + Groq API key in parallel
-  const productIds = items.map((i: { productId: string }) => i.productId).filter(Boolean)
-  const [products, settings] = await Promise.all([
-    prisma.product.findMany({
-      where: { id: { in: productIds } },
-      select: { id: true, name: true, description: true },
-    }),
-    prisma.siteSettings.findUnique({ where: { id: "default" }, select: { groqApiKey: true } }),
-  ])
-
+  const settings = await prisma.siteSettings.findUnique({ where: { id: "default" }, select: { groqApiKey: true } })
   const apiKey = settings?.groqApiKey || process.env.GROQ_API_KEY
 
   // Generate Groq message (with silent fallback)
   let groqMessage = ""
-  if (apiKey && products.length > 0) {
+  if (apiKey) {
     try {
       groqMessage = await generateGroqMessage(apiKey, firstName, products)
     } catch {
@@ -362,16 +406,29 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Tutto ciò che finisce nell'HTML delle email viene escapato
+  const safeItems = orderItems.map((i) => ({ ...i, name: escapeHtml(i.name) }))
+  const emailData = { orderNumber, orderDate, items: safeItems, subtotalCents, shippingCents, totalCents }
+
   await Promise.all([
     sendEmail({
       to: "info@gefcrochet.it",
       subject: `Nuova richiesta d'ordine #${orderNumber} — ${customerName}`,
-      html: buildStudioEmailHtml({ customerName, email, phone, orderNumber, orderDate, items, subtotalCents, shippingCents, totalCents }),
+      html: buildStudioEmailHtml({
+        customerName: escapeHtml(customerName),
+        email: escapeHtml(email),
+        phone: phone ? escapeHtml(phone) : undefined,
+        ...emailData,
+      }),
     }),
     sendEmail({
       to: email,
       subject: `Richiesta d'ordine #${orderNumber} ricevuta — GeF Crochet`,
-      html: buildCustomerEmailHtml({ firstName, orderNumber, orderDate, groqMessage, items, subtotalCents, shippingCents, totalCents }),
+      html: buildCustomerEmailHtml({
+        firstName: escapeHtml(firstName),
+        groqMessage: escapeHtml(groqMessage),
+        ...emailData,
+      }),
     }),
   ])
 

@@ -116,7 +116,11 @@ export async function requestPasswordReset(formData: FormData): Promise<{ error?
 
   const { sendEmail } = await import("@/lib/email")
 
-  const resetUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/studio/login/reset?token=${token}`
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    (process.env.NODE_ENV === "production" ? "https://gefcrochet.vercel.app" : "http://localhost:3000")
+  const resetUrl = `${baseUrl}/studio/login/reset?token=${token}`
 
   await sendEmail({
     to: user.email,
