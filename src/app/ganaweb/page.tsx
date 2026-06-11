@@ -171,7 +171,7 @@ export default function GanaWebPage() {
         <section className="bg-zinc-950 py-8 px-4 overflow-hidden">
           <div className="max-w-6xl mx-auto">
             <p className="text-zinc-500 text-xs font-mono uppercase tracking-widest mb-4 text-center">
-              // stack tecnologico
+              {"// stack tecnologico"}
             </p>
             <div className="flex flex-wrap justify-center gap-2">
               {STACK.map((s) => (

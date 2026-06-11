@@ -83,12 +83,12 @@ export default async function ProductPage({ params }: Props) {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "https://gefcrochet.it" },
-      { "@type": "ListItem", position: 2, name: "Negozio", item: "https://gefcrochet.it/shop" },
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://www.gefcrochet.it" },
+      { "@type": "ListItem", position: 2, name: "Negozio", item: "https://www.gefcrochet.it/shop" },
       ...(product.category
-        ? [{ "@type": "ListItem", position: 3, name: product.category.name, item: `https://gefcrochet.it/shop?category=${product.category.slug}` },
-           { "@type": "ListItem", position: 4, name: product.name, item: `https://gefcrochet.it/shop/${product.slug}` }]
-        : [{ "@type": "ListItem", position: 3, name: product.name, item: `https://gefcrochet.it/shop/${product.slug}` }]),
+        ? [{ "@type": "ListItem", position: 3, name: product.category.name, item: `https://www.gefcrochet.it/shop?category=${product.category.slug}` },
+           { "@type": "ListItem", position: 4, name: product.name, item: `https://www.gefcrochet.it/shop/${product.slug}` }]
+        : [{ "@type": "ListItem", position: 3, name: product.name, item: `https://www.gefcrochet.it/shop/${product.slug}` }]),
     ],
   }
 
@@ -104,7 +104,7 @@ export default async function ProductPage({ params }: Props) {
       price: displayPrice.toFixed(2),
       priceCurrency: "EUR",
       availability: "https://schema.org/InStock",
-      url: `https://gefcrochet.it/shop/${product.slug}`,
+      url: `https://www.gefcrochet.it/shop/${product.slug}`,
       seller: { "@type": "Organization", name: "GeF Crochet" },
     },
   }

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { SITE_URL } from "@/lib/utils"
 import { sendEmail } from "@/lib/email"
 import { personalizeHtml } from "@/lib/newsletter-email"
 
@@ -43,9 +44,7 @@ export async function GET(req: NextRequest) {
 
     for (const subscriber of subscribers) {
       try {
-        // Stesso fallback degli altri moduli newsletter: gefcrochet.it non è ancora collegato
-        const siteUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://gefcrochet.vercel.app"
-        const unsubUrl = `${siteUrl}/api/newsletter/unsubscribe?token=${subscriber.unsubscribeToken}`
+        const unsubUrl = `${SITE_URL}/api/newsletter/unsubscribe?token=${subscriber.unsubscribeToken}`
         const html = personalizeHtml(campaign.htmlContent, unsubUrl)
 
         await sendEmail({ to: subscriber.email, subject: campaign.subject, html })

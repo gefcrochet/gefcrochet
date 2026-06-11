@@ -1,33 +1,13 @@
 "use server"
 
 import { redirect } from "next/navigation"
-import { headers } from "next/headers"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { createSession, deleteSession, createTempToken, verifyTempToken } from "@/lib/session"
+import { getClientIp, checkRateLimit, recordAttempt, clearAttempts } from "@/lib/rate-limit"
+import { SITE_URL } from "@/lib/utils"
 
-const RATE_LIMIT_MAX = 5
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000
-
-async function getClientIp(): Promise<string> {
-  const h = await headers()
-  return h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? h.get("x-real-ip") ?? "unknown"
-}
-
-async function checkRateLimit(ip: string): Promise<boolean> {
-  const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS)
-  const count = await prisma.loginAttempt.count({
-    where: { ip, createdAt: { gte: windowStart } },
-  })
-  return count < RATE_LIMIT_MAX
-}
-
-async function recordFailedAttempt(ip: string): Promise<void> {
-  await prisma.loginAttempt.create({ data: { ip } })
-  prisma.loginAttempt
-    .deleteMany({ where: { createdAt: { lt: new Date(Date.now() - 60 * 60 * 1000) } } })
-    .catch(() => {})
-}
+const RL_SCOPE = "login"
 
 export async function login(
   formData: FormData
@@ -38,22 +18,22 @@ export async function login(
   if (!email || !password) return { error: "Inserisci email e password" }
 
   const ip = await getClientIp()
-  const allowed = await checkRateLimit(ip)
+  const allowed = await checkRateLimit(RL_SCOPE, ip)
   if (!allowed) return { error: "Troppi tentativi. Riprova tra 15 minuti." }
 
   const user = await prisma.user.findUnique({ where: { email } })
   if (!user) {
-    await recordFailedAttempt(ip)
+    await recordAttempt(RL_SCOPE, ip)
     return { error: "Credenziali non valide" }
   }
 
   const valid = await bcrypt.compare(password, user.passwordHash)
   if (!valid) {
-    await recordFailedAttempt(ip)
+    await recordAttempt(RL_SCOPE, ip)
     return { error: "Credenziali non valide" }
   }
 
-  await prisma.loginAttempt.deleteMany({ where: { ip } })
+  await clearAttempts(RL_SCOPE, ip)
 
   if (user.totpEnabled && user.totpSecret) {
     const tempToken = await createTempToken(user.id)
@@ -97,12 +77,12 @@ export async function requestPasswordReset(formData: FormData): Promise<{ error?
   if (!email) return { error: "Inserisci l'email" }
 
   const ip = await getClientIp()
-  const allowed = await checkRateLimit(ip)
+  const allowed = await checkRateLimit(RL_SCOPE, ip)
   if (!allowed) return { error: "Troppi tentativi. Riprova tra 15 minuti." }
 
   const user = await prisma.user.findUnique({ where: { email } })
   if (!user) {
-    await recordFailedAttempt(ip)
+    await recordAttempt(RL_SCOPE, ip)
     return { success: true }
   }
 
@@ -116,10 +96,7 @@ export async function requestPasswordReset(formData: FormData): Promise<{ error?
 
   const { sendEmail } = await import("@/lib/email")
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.NEXT_PUBLIC_BASE_URL ||
-    (process.env.NODE_ENV === "production" ? "https://gefcrochet.vercel.app" : "http://localhost:3000")
+  const baseUrl = process.env.NODE_ENV === "production" ? SITE_URL : "http://localhost:3000"
   const resetUrl = `${baseUrl}/studio/login/reset?token=${token}`
 
   await sendEmail({

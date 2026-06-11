@@ -17,7 +17,7 @@ export default function PrivacyPage() {
         <div className="prose prose-sm max-w-none text-on-surface space-y-8">
 
           <p className="text-on-surface-variant leading-relaxed">
-            La presente Informativa sulla privacy descrive come GeF Crochet (il "Sito", "noi", "ci" o "nostro") raccoglie, utilizza e divulga le tue informazioni personali quando visiti, utilizzi i nostri servizi o effettui un acquisto da gefcrochet.it (il "Sito") o comunichi in altro modo con noi in merito al Sito (collettivamente, i "Servizi"). Ai fini della presente Informativa sulla privacy, "tu" e "tuo" indicano te come utente dei Servizi, che tu sia un cliente, un visitatore del sito web o un altro individuo di cui abbiamo raccolto le informazioni ai sensi della presente Informativa sulla privacy.
+            {`La presente Informativa sulla privacy descrive come GeF Crochet (il "Sito", "noi", "ci" o "nostro") raccoglie, utilizza e divulga le tue informazioni personali quando visiti, utilizzi i nostri servizi o effettui un acquisto da gefcrochet.it (il "Sito") o comunichi in altro modo con noi in merito al Sito (collettivamente, i "Servizi"). Ai fini della presente Informativa sulla privacy, "tu" e "tuo" indicano te come utente dei Servizi, che tu sia un cliente, un visitatore del sito web o un altro individuo di cui abbiamo raccolto le informazioni ai sensi della presente Informativa sulla privacy.`}
           </p>
           <p className="text-on-surface-variant leading-relaxed">Si prega di leggere attentamente la presente Informativa sulla privacy.</p>
 
@@ -43,7 +43,7 @@ export default function PrivacyPage() {
               </ul>
             </Subsection>
             <Subsection title="Informazioni che raccogliamo sul tuo utilizzo">
-              Potremmo raccogliere automaticamente determinate informazioni sulla tua interazione con i Servizi ("Dati di utilizzo"). A tale scopo, potremmo utilizzare cookie, pixel e tecnologie simili. I dati di utilizzo possono includere informazioni su come accedi e utilizzi il nostro Sito, informazioni sul dispositivo, informazioni sul browser, il tuo indirizzo IP e altre informazioni relative alla tua interazione con i Servizi.
+              {`Potremmo raccogliere automaticamente determinate informazioni sulla tua interazione con i Servizi ("Dati di utilizzo"). A tale scopo, potremmo utilizzare cookie, pixel e tecnologie simili. I dati di utilizzo possono includere informazioni su come accedi e utilizzi il nostro Sito, informazioni sul dispositivo, informazioni sul browser, il tuo indirizzo IP e altre informazioni relative alla tua interazione con i Servizi.`}
             </Subsection>
             <Subsection title="Informazioni che otteniamo da terze parti">
               Potremmo ottenere informazioni su di te da terze parti, inclusi fornitori di servizi che raccolgono informazioni per nostro conto, come elaboratori di pagamento e fornitori di analisi dei dati. Qualsiasi informazione che otteniamo da terze parti sarà trattata in conformità con la presente Informativa sulla privacy.

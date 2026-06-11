@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/studio/", "/api/", "/ganaweb"],
       },
     ],
-    sitemap: "https://gefcrochet.it/sitemap.xml",
+    sitemap: "https://www.gefcrochet.it/sitemap.xml",
   }
 }

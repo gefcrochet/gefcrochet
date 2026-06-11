@@ -52,7 +52,7 @@ export default async function HomePage() {
       <AnnouncementBar />
       <Header />
       <main className="flex-1">
-        <h1 className="sr-only">GeF Crochet — Prodotti artigianali all'uncinetto fatti a mano in Italia</h1>
+        <h1 className="sr-only">GeF Crochet — Prodotti artigianali all&apos;uncinetto fatti a mano in Italia</h1>
 
         {/* Hero Slideshow */}
         <HeroSlideshow slides={slides} />

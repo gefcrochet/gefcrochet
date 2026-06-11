@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { SITE_URL } from "@/lib/utils"
 import { getSessionFromRequest } from "@/lib/session"
 import { sendEmail } from "@/lib/email"
 
@@ -41,7 +42,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       data: { status: "PENDING_APPROVAL" },
     })
 
-    const siteUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://gefcrochet.vercel.app"
+    const siteUrl = SITE_URL
     const approveUrl = `${siteUrl}/api/newsletter/campaigns/${id}/approve?token=${campaign.approvalToken}`
     const cancelUrl  = `${siteUrl}/api/newsletter/campaigns/${id}/cancel?token=${campaign.approvalToken}`
     const scheduledStr = campaign.scheduledFor
@@ -92,7 +93,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (topic !== undefined) updateData.topic = topic || null
   if (scheduledFor !== undefined) updateData.scheduledFor = scheduledFor ? new Date(scheduledFor) : null
 
-  let updated = await prisma.newsletterCampaign.update({ where: { id }, data: updateData })
+  const updated = await prisma.newsletterCampaign.update({ where: { id }, data: updateData })
 
   // Aggiorna prodotti se specificati
   if (productIds !== undefined) {

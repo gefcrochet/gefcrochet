@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { SITE_URL } from "@/lib/utils"
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -35,7 +36,7 @@ function confirmHtml(type: "success" | "info", title: string, message: string) {
   <div style="max-width:480px;width:100%;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
     <div style="background:${color};padding:24px 32px;"><p style="margin:0;font-size:20px;font-weight:700;color:#fff;">${title}</p></div>
     <div style="padding:24px 32px;"><p style="margin:0 0 20px;font-size:15px;color:#191c19;line-height:1.6;">${message}</p>
-    <a href="https://gefcrochet.vercel.app/studio/newsletter" style="display:inline-block;background:${color};color:#fff;font-size:13px;font-weight:600;padding:10px 20px;border-radius:20px;text-decoration:none;">Vai allo Studio</a></div>
+    <a href="${SITE_URL}/studio/newsletter" style="display:inline-block;background:${color};color:#fff;font-size:13px;font-weight:600;padding:10px 20px;border-radius:20px;text-decoration:none;">Vai allo Studio</a></div>
   </div>
 </body></html>`
 }

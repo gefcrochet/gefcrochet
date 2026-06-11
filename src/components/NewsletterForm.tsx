@@ -29,8 +29,8 @@ export function NewsletterForm() {
   if (status === "success") {
     return (
       <div className="flex flex-col items-center gap-2 text-on-primary">
-        <span className="material-symbols-outlined text-3xl">check_circle</span>
-        <p className="text-sm font-medium">Benvenuta! Ti abbiamo aggiunta alla lista.</p>
+        <span className="material-symbols-outlined text-3xl">mark_email_unread</span>
+        <p className="text-sm font-medium">Quasi fatto! Controlla la tua email e conferma l&apos;iscrizione.</p>
       </div>
     )
   }

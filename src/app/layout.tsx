@@ -4,8 +4,8 @@ import { CartProvider } from "@/components/CartContext"
 import { MobileBottomNav } from "@/components/MobileBottomNav"
 import { CookieConsentProvider } from "@/components/CookieConsent"
 import { WhatsAppButton } from "@/components/WhatsAppButton"
+import { SITE_URL } from "@/lib/utils"
 
-const SITE_URL = "https://gefcrochet.it"
 const SITE_NAME = "GeF Crochet"
 const DEFAULT_DESCRIPTION = "Prodotti artigianali all'uncinetto fatti a mano in Italia. Borse, accessori, amigurumi e decorazioni in cotone, lana e fettuccia."
 

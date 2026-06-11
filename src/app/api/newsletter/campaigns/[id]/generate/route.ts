@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { SITE_URL } from "@/lib/utils"
 import { getSessionFromRequest } from "@/lib/session"
 import { buildNewsletterHtmlTemplate, type NewsletterProduct } from "@/lib/newsletter-email"
 
@@ -160,7 +161,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return url.replace("/image/upload/", "/image/upload/f_jpg,c_fill,w_600/")
     }
     if (url.startsWith("http")) return url
-    const siteUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://gefcrochet.vercel.app"
+    const siteUrl = SITE_URL
     return `${siteUrl}${url.startsWith("/") ? "" : "/"}${url}`
   }
 

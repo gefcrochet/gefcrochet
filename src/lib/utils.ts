@@ -1,6 +1,12 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
+/**
+ * URL canonico del sito (l'apex gefcrochet.it fa redirect 307 verso www).
+ * NEXT_PUBLIC_BASE_URL consente l'override per ambienti di anteprima.
+ */
+export const SITE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.gefcrochet.it"
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }

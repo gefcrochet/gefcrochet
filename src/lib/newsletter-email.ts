@@ -1,9 +1,10 @@
+import { SITE_URL } from "@/lib/utils"
 /** Placeholder sostituito per ogni iscritto al momento dell'invio */
 export const UNSUB_PLACEHOLDER = "{{UNSUBSCRIBE_URL}}"
 
 // Risolto a runtime (server-side) → segue la variabile d'ambiente per ogni deploy
 function getSiteUrl(): string {
-  return process.env.NEXT_PUBLIC_BASE_URL ?? "https://gefcrochet.vercel.app"
+  return SITE_URL
 }
 
 export interface NewsletterProduct {

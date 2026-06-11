@@ -2,7 +2,7 @@ import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getSessionFromRequest } from "@/lib/session"
 import { sendEmail } from "@/lib/email"
-import { formatPrice } from "@/lib/utils"
+import { formatPrice, SITE_URL } from "@/lib/utils"
 import { verifyTurnstile } from "@/lib/turnstile"
 
 const SHIPPING_FREE_THRESHOLD_CENTS = 15000
@@ -292,7 +292,7 @@ function buildStudioEmailHtml({
       </table>
     </td></tr>
     <tr><td style="background:#f8faf4;padding:16px 24px;border-top:1px solid #e1e3dd;">
-      <a href="https://gefcrochet.vercel.app/studio/orders" style="font-size:13px;color:#516447;">Visualizza nello Studio →</a>
+      <a href="${SITE_URL}/studio/orders" style="font-size:13px;color:#516447;">Visualizza nello Studio →</a>
     </td></tr>
   </table>
 </body>
